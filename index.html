@@ -75,7 +75,6 @@
       background: #0f1319;
       color: #f7b731;
       outline: none;
-      text-transform: uppercase;
     }
 
     .serial-input:focus {
@@ -85,7 +84,6 @@
 
     .serial-input::placeholder {
       color: #4a5568;
-      text-transform: none;
     }
 
     .btn {
@@ -410,6 +408,24 @@
       margin-bottom: 1rem;
     }
 
+    /* Debug panel */
+    .debug-panel {
+      background: #1a1f2b;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      border: 1px solid #2a3340;
+      display: none;
+      font-size: 0.75rem;
+      color: #6b7d90;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .debug-panel.show {
+      display: block;
+    }
+
     @media (max-width: 500px) {
       .search-box { flex-direction: column; }
       .specs-grid { grid-template-columns: 1fr 1fr; padding: 1rem; }
@@ -433,7 +449,7 @@
           type="text" 
           id="psSrInput" 
           class="serial-input" 
-          placeholder="Enter PS-SR# (e.g., PS-001)"
+          placeholder="Enter PS-SR# (e.g., PS-RFCBL-1)"
           autocomplete="off"
           autofocus
         >
@@ -442,13 +458,14 @@
       
       <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
         <button class="btn btn-scan" id="scanToggleBtn">📷 Scan QR Code</button>
-        <button class="btn btn-outline" id="demoBtn">🎲 Load Demo</button>
+        <button class="btn btn-outline" id="reloadBtn">🔄 Reload Excel</button>
+        <button class="btn btn-outline" id="debugBtn">🐛 Debug</button>
       </div>
 
       <!-- Backend Status -->
       <div class="backend-status" id="backendStatus">
         <span class="status-dot" id="backendDot"></span>
-        <span id="backendStatusText">Backend: OneDrive Excel</span>
+        <span id="backendStatusText">Backend: Connecting to Excel...</span>
       </div>
 
       <!-- Scanner -->
@@ -473,6 +490,9 @@
       <div class="message error" id="errorMsg"><span>⚠️</span><span id="errorText"></span></div>
       <div class="message success" id="successMsg"><span>✅</span><span id="successText"></span></div>
       <div class="message info" id="infoMsg"><span>ℹ️</span><span id="infoText"></span></div>
+
+      <!-- Debug Panel -->
+      <div class="debug-panel" id="debugPanel"></div>
     </div>
 
     <!-- Cable Dashboard -->
@@ -498,85 +518,21 @@
     </div>
   </div>
 
-<script>
+  <script>
     (function() {
       // ============================================
-      // 🔴 PUT YOUR ONEDRIVE SHARE LINK HERE 🔴
+      // 🔴 PUT YOUR ONEDRIVE EXCEL LINK HERE 🔴
       // ============================================
-      const ONEDRIVE_SHARE_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAYplyq7FeTAx3DUS7GznxkE?e=mwrGHe';
-      // Example: https://1drv.ms/x/s!AqL2xN9mKpZkgcQ
-      // OR: https://onedrive.live.com/view.aspx?resid=YOUR_RESID
+      const ONEDRIVE_EXCEL_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAT0FQZCnBVG0y5F267YxoN8?e=j9q2AW';
       // ============================================
 
-      // Function to convert OneDrive share link to direct download
-      function convertOneDriveLink(shareUrl) {
-        let downloadUrl = shareUrl;
-        
-        // Method 1: If it's a 1drv.ms short link
-        if (downloadUrl.includes('1drv.ms')) {
-          // Remove any existing query parameters and add download=1
-          downloadUrl = downloadUrl.split('?')[0];
-          downloadUrl = downloadUrl + '?download=1';
-        }
-        // Method 2: If it's a onedrive.live.com link
-        else if (downloadUrl.includes('onedrive.live.com')) {
-          if (downloadUrl.includes('view.aspx')) {
-            // Convert view.aspx to download.aspx
-            downloadUrl = downloadUrl.replace('view.aspx', 'download.aspx');
-          }
-          // Add download parameter if not present
-          if (!downloadUrl.includes('download=1')) {
-            downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
-          }
-        }
-        // Method 3: If it's a sharepoint.com link
-        else if (downloadUrl.includes('sharepoint.com')) {
-          if (!downloadUrl.includes('download=1')) {
-            downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
-          }
-        }
-        
-        console.log('📎 Original link:', shareUrl);
-        console.log('📥 Converted to download:', downloadUrl);
-        return downloadUrl;
-      }
-
-      // Local fallback database
-      const localDatabase = {
-        "PS-001": {
-          psSr: "PS-001",
-          cableSr: "CBL-5G-0421",
-          description: "LMR-400-UF Cable Assembly",
-          partNo: "TP-400-UF",
-          length: "12.5 ft",
-          connectorA: "N-Type (M)",
-          connectorB: "SMA (M)",
-          frequency: "6 GHz",
-          status: "Active",
-          location: "Tower-A Sector 3"
-        },
-        "PS-002": {
-          psSr: "PS-002",
-          cableSr: "CBL-LMR-0192",
-          description: "LMR-240 Test Cable",
-          partNo: "TP-240",
-          length: "8.2 ft",
-          connectorA: "BNC (M)",
-          connectorB: "BNC (M)",
-          frequency: "3 GHz",
-          status: "Active",
-          location: "Lab Bench 4"
-        }
-      };
-
-      // ============================================
-      // DOM ELEMENTS
-      // ============================================
+      // DOM Elements
       const els = {
         psSrInput: document.getElementById('psSrInput'),
         searchBtn: document.getElementById('searchBtn'),
         scanToggleBtn: document.getElementById('scanToggleBtn'),
-        demoBtn: document.getElementById('demoBtn'),
+        reloadBtn: document.getElementById('reloadBtn'),
+        debugBtn: document.getElementById('debugBtn'),
         scannerWrapper: document.getElementById('scannerWrapper'),
         readerDiv: document.getElementById('reader'),
         scanStatusText: document.getElementById('scanStatusText'),
@@ -595,12 +551,23 @@
         partNoDisplay: document.getElementById('partNoDisplay'),
         backendStatus: document.getElementById('backendStatus'),
         backendDot: document.getElementById('backendDot'),
-        backendStatusText: document.getElementById('backendStatusText')
+        backendStatusText: document.getElementById('backendStatusText'),
+        debugPanel: document.getElementById('debugPanel')
       };
 
       let html5QrCode = null;
       let isScanning = false;
-      let cachedDatabase = null;
+      let cableDatabase = {}; // Will be populated from Excel only
+
+      // ============================================
+      // DEBUG LOGGING
+      // ============================================
+      function debugLog(message) {
+        console.log(message);
+        const time = new Date().toLocaleTimeString();
+        els.debugPanel.innerHTML += `<div>[${time}] ${message}</div>`;
+        els.debugPanel.scrollTop = els.debugPanel.scrollHeight;
+      }
 
       // ============================================
       // UI HELPERS
@@ -620,157 +587,216 @@
           els.infoText.textContent = text;
           els.infoMsg.classList.add('show');
         }
-        
-        setTimeout(() => {
-          els.errorMsg.classList.remove('show');
-          els.successMsg.classList.remove('show');
-          els.infoMsg.classList.remove('show');
-        }, 5000);
       }
 
       function updateBackendStatus(online, text) {
         if (online) {
           els.backendStatus.classList.remove('offline');
           els.backendDot.classList.remove('offline');
-          els.backendStatusText.textContent = text || 'Backend: OneDrive Excel Connected';
         } else {
           els.backendStatus.classList.add('offline');
           els.backendDot.classList.add('offline');
-          els.backendStatusText.textContent = text || 'Backend: Using Local Database';
         }
+        els.backendStatusText.textContent = text;
       }
 
       // ============================================
-      // EXCEL DATA PARSING
+      // EXCEL PARSING - IMPROVED
       // ============================================
-      function parseCSVToDatabase(csvText) {
-        const lines = csvText.split('\n').filter(line => line.trim());
-        if (lines.length < 2) return null;
+      function parseExcelData(csvText) {
+        debugLog('📋 Starting to parse Excel data...');
+        debugLog(`Raw data length: ${csvText.length} characters`);
         
-        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-        console.log('📋 Excel Headers:', headers);
+        // Show first 200 chars for debugging
+        debugLog(`First 200 chars: ${csvText.substring(0, 200)}`);
+        
+        const lines = csvText.split('\n').filter(line => line.trim().length > 0);
+        debugLog(`Found ${lines.length} lines in file`);
+        
+        if (lines.length < 2) {
+          debugLog('❌ ERROR: File has less than 2 lines (need header + at least 1 data row)');
+          return {};
+        }
+        
+        // Parse header
+        const headerLine = lines[0];
+        debugLog(`Header line: ${headerLine}`);
+        
+        // Split by comma, but handle quoted values
+        const headers = headerLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').trim());
+        debugLog(`Headers found: ${JSON.stringify(headers)}`);
         
         const database = {};
         
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-          if (values.length < 2) continue;
+          const line = lines[i].trim();
+          if (!line) continue;
           
+          // Split by comma, handle quoted values
+          const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, '').trim());
+          
+          if (values.length < 2) {
+            debugLog(`⚠️ Skipping line ${i+1}: too few values`);
+            continue;
+          }
+          
+          // Create row object
           const row = {};
           headers.forEach((header, index) => {
-            row[header.toLowerCase().replace(/\s+/g, '')] = values[index] || '';
+            row[header] = values[index] || '';
           });
           
-          // Find PS-SR# column
-          const psSr = row['ps-sr#'] || row['ps-sr'] || row['pssr#'] || row['pssr'] || '';
-          if (psSr) {
-            database[psSr.toUpperCase()] = {
-              psSr: psSr,
-              cableSr: row['cablesr#'] || row['cablesr'] || row['cable#'] || '',
-              description: row['description'] || '',
-              partNo: row['timespartno.'] || row['timespartno'] || row['partno'] || '',
-              length: row['length'] || '',
-              connectorA: row['connector-a'] || row['connectora'] || '',
-              connectorB: row['connector-b'] || row['connectorb'] || '',
-              frequency: row['frequency'] || row['freq'] || '',
-              status: row['status'] || 'Active',
-              location: row['location'] || ''
-            };
-          }
-        }
-        
-        console.log('✅ Loaded', Object.keys(database).length, 'cables from Excel');
-        return database;
-      }
-
-      async function fetchFromOneDrive(shareUrl) {
-        // Convert to direct download link
-        const downloadUrl = convertOneDriveLink(shareUrl);
-        
-        console.log('📥 Attempting to download Excel...');
-        
-        // Try multiple methods to fetch the file
-        const methods = [
-          // Method 1: Direct fetch
-          async () => {
-            const response = await fetch(downloadUrl, { 
-              redirect: 'follow',
-              headers: { 'Accept': 'text/csv, application/vnd.ms-excel, application/octet-stream' }
-            });
-            if (!response.ok) throw new Error('Direct fetch failed');
-            return await response.text();
-          },
-          // Method 2: Fetch with no-cors (may work in some cases)
-          async () => {
-            const response = await fetch(downloadUrl, { 
-              mode: 'no-cors',
-              redirect: 'follow'
-            });
-            return await response.text();
-          }
-        ];
-        
-        let csvText = null;
-        let lastError = null;
-        
-        for (const method of methods) {
-          try {
-            csvText = await method();
-            if (csvText && csvText.trim().length > 0 && !csvText.trim().startsWith('<!DOCTYPE')) {
+          debugLog(`Row ${i+1} raw: ${JSON.stringify(row)}`);
+          
+          // Find PS-SR# - try multiple possible column names
+          let psSr = '';
+          for (const key of Object.keys(row)) {
+            const keyLower = key.toLowerCase().replace(/[\s\-_#]+/g, '');
+            if (keyLower === 'pssr' || keyLower === 'pssr#' || keyLower === 'ps-sr' || keyLower === 'pssrno' || keyLower === 'pssrnumber') {
+              psSr = row[key];
               break;
             }
-          } catch (error) {
-            lastError = error;
-            console.log('Method failed, trying next...');
+          }
+          
+          // Also check first column as fallback
+          if (!psSr && headers.length > 0) {
+            psSr = values[0];
+            debugLog(`⚠️ PS-SR# column not found by name, using first column: "${psSr}"`);
+          }
+          
+          if (psSr && psSr.trim()) {
+            const psSrClean = psSr.trim();
+            
+            // Find other fields - try multiple possible names
+            const findField = (possibleNames) => {
+              for (const name of possibleNames) {
+                for (const key of Object.keys(row)) {
+                  if (key.toLowerCase().replace(/[\s\-_#]+/g, '') === name.toLowerCase().replace(/[\s\-_#]+/g, '')) {
+                    return row[key];
+                  }
+                }
+              }
+              return '';
+            };
+            
+            database[psSrClean] = {
+              psSr: psSrClean,
+              cableSr: findField(['cablesr', 'cablesr#', 'cable#', 'cableserial', 'cableserial#']),
+              description: findField(['description', 'desc', 'cabledescription']),
+              partNo: findField(['timespartno', 'timespartno.', 'partno', 'partnumber', 'timespart']),
+              length: findField(['length', 'cablelength']),
+              connectorA: findField(['connector-a', 'connectora', 'connector a', 'conn-a']),
+              connectorB: findField(['connector-b', 'connectorb', 'connector b', 'conn-b']),
+              frequency: findField(['frequency', 'freq', 'maxfrequency']),
+              status: findField(['status', 'condition']),
+              location: findField(['location', 'site', 'project'])
+            };
+            
+            debugLog(`✅ Added: ${psSrClean} -> ${database[psSrClean].cableSr || '(no cable SR)'}`);
           }
         }
         
-        if (!csvText || csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
-          throw new Error('OneDrive returned a webpage instead of Excel data. Make sure:\n' +
-            '1. File is shared as "Anyone with the link can view"\n' +
-            '2. Link is correct\n' +
-            '3. File is an Excel (.xlsx) file');
-        }
-        
-        const database = parseCSVToDatabase(csvText);
-        if (!database || Object.keys(database).length === 0) {
-          throw new Error('No valid data found. Check column headers: PS-SR#, Cable SR#, Description, Times Part No., Length, Connector - A, Connector-B');
-        }
+        const count = Object.keys(database).length;
+        debugLog(`📊 Total cables loaded: ${count}`);
+        debugLog(`📊 Keys: ${Object.keys(database).join(', ')}`);
         
         return database;
       }
 
-      async function loadDatabase() {
-        if (cachedDatabase) return cachedDatabase;
+      async function loadExcelFile() {
+        updateBackendStatus(false, 'Loading Excel...');
+        debugLog('🔄 Starting Excel load...');
+        debugLog(`📎 Link: ${ONEDRIVE_EXCEL_LINK}`);
         
         try {
-          showMessage('info', '📥 Connecting to OneDrive Excel...');
-          updateBackendStatus(false, 'Connecting to Excel...');
+          // Convert OneDrive link to direct download
+          let downloadUrl = ONEDRIVE_EXCEL_LINK;
           
-          cachedDatabase = await fetchFromOneDrive(ONEDRIVE_SHARE_LINK);
+          if (downloadUrl.includes('1drv.ms')) {
+            downloadUrl = downloadUrl.split('?')[0] + '?download=1';
+          } else if (downloadUrl.includes('onedrive.live.com') || downloadUrl.includes('sharepoint.com')) {
+            if (!downloadUrl.includes('download=1')) {
+              downloadUrl += (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
+            }
+          }
           
-          const count = Object.keys(cachedDatabase).length;
-          updateBackendStatus(true, `✅ OneDrive Connected (${count} cables)`);
-          showMessage('success', `✅ Loaded ${count} cables from Excel`);
-          return cachedDatabase;
+          debugLog(`📥 Download URL: ${downloadUrl}`);
+          
+          const response = await fetch(downloadUrl, {
+            redirect: 'follow',
+            headers: {
+              'Accept': 'text/csv, application/vnd.ms-excel, application/octet-stream, */*'
+            }
+          });
+          
+          debugLog(`📡 Response status: ${response.status}`);
+          debugLog(`📡 Content-Type: ${response.headers.get('content-type')}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const text = await response.text();
+          debugLog(`📄 Received ${text.length} characters`);
+          
+          // Check if it's HTML (error page)
+          if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+            throw new Error('Received HTML instead of Excel data. Link may require authentication.');
+          }
+          
+          // Parse the data
+          const database = parseExcelData(text);
+          
+          if (Object.keys(database).length === 0) {
+            throw new Error('No cables found in Excel. Check column headers and data.');
+          }
+          
+          cableDatabase = database;
+          updateBackendStatus(true, `✅ Excel Loaded (${Object.keys(database).length} cables)`);
+          showMessage('success', `✅ Loaded ${Object.keys(database).length} cables from Excel`);
+          
+          debugLog('✅ Excel load complete!');
+          return database;
           
         } catch (error) {
-          console.error('❌ Excel load error:', error);
-          updateBackendStatus(false, 'Using Local Database');
-          showMessage('error', '⚠️ Using local database: ' + error.message);
-          cachedDatabase = localDatabase;
-          return localDatabase;
+          debugLog(`❌ ERROR: ${error.message}`);
+          updateBackendStatus(false, '❌ Excel Load Failed');
+          showMessage('error', 'Cannot load Excel: ' + error.message);
+          cableDatabase = {};
+          throw error;
         }
       }
 
       async function getCableData(psSrNumber) {
-        const cleanPS = psSrNumber.trim().toUpperCase();
-        const database = await loadDatabase();
+        const searchTerm = psSrNumber.trim();
+        debugLog(`🔍 Searching for: "${searchTerm}"`);
+        debugLog(`📊 Database has ${Object.keys(cableDatabase).length} entries: ${Object.keys(cableDatabase).join(', ')}`);
         
-        const cable = database[cleanPS];
-        if (cable) return cable;
+        // Try exact match
+        if (cableDatabase[searchTerm]) {
+          debugLog(`✅ Exact match found: ${searchTerm}`);
+          return cableDatabase[searchTerm];
+        }
         
-        throw new Error(`PS-SR# "${cleanPS}" not found. Available: ${Object.keys(database).slice(0, 5).join(', ')}...`);
+        // Try case-insensitive match
+        const searchUpper = searchTerm.toUpperCase();
+        for (const key of Object.keys(cableDatabase)) {
+          if (key.toUpperCase() === searchUpper) {
+            debugLog(`✅ Case-insensitive match: ${key}`);
+            return cableDatabase[key];
+          }
+        }
+        
+        // Try partial match
+        for (const key of Object.keys(cableDatabase)) {
+          if (key.toUpperCase().includes(searchUpper) || searchUpper.includes(key.toUpperCase())) {
+            debugLog(`✅ Partial match: ${key}`);
+            return cableDatabase[key];
+          }
+        }
+        
+        debugLog(`❌ No match found for: ${searchTerm}`);
+        throw new Error(`"${searchTerm}" not found. Available: ${Object.keys(cableDatabase).slice(0, 5).join(', ')}...`);
       }
 
       // ============================================
@@ -780,14 +806,24 @@
         els.cableDashboard.classList.add('visible');
         els.emptyState.style.display = 'none';
         
-        els.psSrDisplay.textContent = cable.psSr;
-        els.cableSrDisplay.textContent = cable.cableSr;
-        els.descriptionDisplay.textContent = cable.description;
-        els.partNoDisplay.textContent = cable.partNo;
+        els.psSrDisplay.textContent = cable.psSr || '—';
+        els.cableSrDisplay.textContent = cable.cableSr || '—';
+        els.descriptionDisplay.textContent = cable.description || '—';
+        els.partNoDisplay.textContent = cable.partNo || '—';
         
         els.specsGrid.innerHTML = '';
         
-        // Description
+        const addSpec = (label, value, highlight = false) => {
+          const div = document.createElement('div');
+          div.className = 'spec-item';
+          div.innerHTML = `
+            <div class="spec-label">${label}</div>
+            <div class="spec-value ${highlight ? 'highlight' : ''}">${value || '—'}</div>
+          `;
+          els.specsGrid.appendChild(div);
+        };
+        
+        // Description (full width)
         const descDiv = document.createElement('div');
         descDiv.className = 'spec-item full-width';
         descDiv.innerHTML = `
@@ -796,24 +832,10 @@
         `;
         els.specsGrid.appendChild(descDiv);
         
-        // Part No & Length
-        const partDiv = document.createElement('div');
-        partDiv.className = 'spec-item';
-        partDiv.innerHTML = `
-          <div class="spec-label">Times Part No.</div>
-          <div class="spec-value">${cable.partNo || '—'}</div>
-        `;
-        els.specsGrid.appendChild(partDiv);
+        addSpec('Times Part No.', cable.partNo);
+        addSpec('Length', cable.length);
         
-        const lenDiv = document.createElement('div');
-        lenDiv.className = 'spec-item';
-        lenDiv.innerHTML = `
-          <div class="spec-label">Length</div>
-          <div class="spec-value">${cable.length || '—'}</div>
-        `;
-        els.specsGrid.appendChild(lenDiv);
-        
-        // Connectors
+        // Connectors (full width)
         const connDiv = document.createElement('div');
         connDiv.className = 'spec-item full-width';
         connDiv.innerHTML = `
@@ -840,8 +862,8 @@
           els.specsGrid.appendChild(infoDiv);
         }
         
-        els.psSrInput.value = cable.psSr;
-        showMessage('success', `✅ ${cable.psSr} loaded from Excel`);
+        els.psSrInput.value = cable.psSr || '';
+        showMessage('success', `✅ ${cable.psSr} loaded`);
       }
 
       async function lookupCable(psSrNumber) {
@@ -850,12 +872,21 @@
           return;
         }
 
+        // If database is empty, try loading Excel first
+        if (Object.keys(cableDatabase).length === 0) {
+          showMessage('info', '📥 Loading Excel data first...');
+          try {
+            await loadExcelFile();
+          } catch (error) {
+            showMessage('error', 'Cannot load Excel: ' + error.message);
+            return;
+          }
+        }
+
         try {
           els.cableDashboard.classList.add('visible');
           els.emptyState.style.display = 'none';
-          els.specsGrid.innerHTML = '<div class="spec-item full-width" style="text-align:center;color:#6b7d90;">⏳ Searching Excel database...</div>';
-          els.psSrDisplay.textContent = 'Loading...';
-          els.cableSrDisplay.textContent = '---';
+          els.specsGrid.innerHTML = '<div class="spec-item full-width" style="text-align:center;color:#6b7d90;">⏳ Searching database...</div>';
 
           const cable = await getCableData(psSrNumber);
           renderCableData(cable);
@@ -867,7 +898,7 @@
       }
 
       // ============================================
-      // QR SCANNER (same as before)
+      // QR SCANNER
       // ============================================
       function updateOverlay() {
         const readerEl = els.readerDiv;
@@ -897,7 +928,7 @@
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          showMessage('error', 'Camera access denied. Please allow camera permissions.');
+          showMessage('error', 'Camera access denied.');
           return;
         }
 
@@ -912,23 +943,10 @@
         try {
           await html5QrCode.start(
             { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+            { fps: 15, qrbox: { width: 220, height: 220 } },
             (decodedText) => {
-              console.log('✅ QR Detected:', decodedText);
-              els.scanStatusText.textContent = '✅ Detected! Loading...';
+              els.scanStatusText.textContent = '✅ Detected!';
               els.scanStatusText.style.color = '#27ae60';
-              
-              try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.frequency.value = 800;
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.2);
-              } catch(e) {}
               
               setTimeout(() => {
                 stopScanner();
@@ -936,21 +954,19 @@
               }, 500);
             },
             () => {
-              els.scanStatusText.textContent = 'Searching for QR code...';
+              els.scanStatusText.textContent = 'Searching...';
               els.scanStatusText.style.color = '#f7b731';
             }
           );
           
           isScanning = true;
-          els.scanToggleBtn.textContent = '⏹️ Stop Scanner';
+          els.scanToggleBtn.textContent = '⏹️ Stop';
           els.scanToggleBtn.classList.add('scanning');
           setTimeout(updateOverlay, 500);
           window.addEventListener('resize', updateOverlay);
-          showMessage('info', '📷 Camera active - Point at PS-SR# QR code');
           
         } catch (err) {
-          console.error('Scanner error:', err);
-          showMessage('error', 'Failed to start camera: ' + err.message);
+          showMessage('error', 'Camera error: ' + err.message);
           stopScanner();
         }
       }
@@ -962,7 +978,7 @@
             els.scannerWrapper.classList.remove('active');
             els.scanToggleBtn.textContent = '📷 Scan QR Code';
             els.scanToggleBtn.classList.remove('scanning');
-            els.scanStatusText.textContent = '📷 Align QR code in frame';
+            els.scanStatusText.textContent = '📷 Align QR code';
             els.scanStatusText.style.color = '#f7b731';
             window.removeEventListener('resize', updateOverlay);
           });
@@ -982,36 +998,44 @@
         isScanning ? stopScanner() : startScanner();
       });
 
-      els.demoBtn.addEventListener('click', () => {
-        loadDatabase().then(db => {
-          const demos = Object.keys(db);
-          if (demos.length > 0) {
-            const random = demos[Math.floor(Math.random() * demos.length)];
-            els.psSrInput.value = random;
-            lookupCable(random);
-          } else {
-            showMessage('error', 'No cables found in database');
-          }
-        });
+      els.reloadBtn.addEventListener('click', async () => {
+        cableDatabase = {};
+        els.cableDashboard.classList.remove('visible');
+        els.emptyState.style.display = '';
+        debugLog('🔄 Manual reload triggered');
+        els.debugPanel.innerHTML = '';
+        try {
+          await loadExcelFile();
+        } catch (error) {
+          // Error already shown
+        }
+      });
+
+      els.debugBtn.addEventListener('click', () => {
+        els.debugPanel.classList.toggle('show');
+        if (els.debugPanel.classList.contains('show')) {
+          debugLog('🐛 Debug panel opened');
+          debugLog(`📊 Current database keys: ${Object.keys(cableDatabase).join(', ') || '(empty)'}`);
+        }
       });
 
       // ============================================
       // INITIALIZATION
       // ============================================
       console.log('📡 RF Cable Scanner Ready');
-      console.log('🔗 Excel Link:', ONEDRIVE_SHARE_LINK);
       
-      // Pre-load Excel data
-      loadDatabase().then(() => {
-        console.log('✅ Excel data pre-loaded');
+      // Auto-load Excel on startup
+      loadExcelFile().catch(() => {
+        updateBackendStatus(false, 'Excel not loaded. Click 🔄 Reload');
       });
       
-      // URL parameter support
+      // URL parameter
       const urlParams = new URLSearchParams(window.location.search);
       const psParam = urlParams.get('ps') || urlParams.get('cable');
       if (psParam) {
         els.psSrInput.value = psParam;
-        lookupCable(psParam);
+        // Wait for Excel to load then search
+        setTimeout(() => lookupCable(psParam), 2000);
       }
     })();
   </script>
