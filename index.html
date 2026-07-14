@@ -498,18 +498,50 @@
     </div>
   </div>
 
-  <script>
+<script>
     (function() {
       // ============================================
-      // 🔴 PUT YOUR ONEDRIVE EXCEL LINK HERE 🔴
+      // 🔴 PUT YOUR ONEDRIVE SHARE LINK HERE 🔴
       // ============================================
-      const ONEDRIVE_EXCEL_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAT0FQZCnBVG0y5F267YxoN8?e=JbPq2b';
-      // ============================================
-      // Replace the link above with your OneDrive share link
+      const ONEDRIVE_SHARE_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAYplyq7FeTAx3DUS7GznxkE?e=mwrGHe';
       // Example: https://1drv.ms/x/s!AqL2xN9mKpZkgcQ
+      // OR: https://onedrive.live.com/view.aspx?resid=YOUR_RESID
       // ============================================
 
-      // Local fallback database (used if Excel fails to load)
+      // Function to convert OneDrive share link to direct download
+      function convertOneDriveLink(shareUrl) {
+        let downloadUrl = shareUrl;
+        
+        // Method 1: If it's a 1drv.ms short link
+        if (downloadUrl.includes('1drv.ms')) {
+          // Remove any existing query parameters and add download=1
+          downloadUrl = downloadUrl.split('?')[0];
+          downloadUrl = downloadUrl + '?download=1';
+        }
+        // Method 2: If it's a onedrive.live.com link
+        else if (downloadUrl.includes('onedrive.live.com')) {
+          if (downloadUrl.includes('view.aspx')) {
+            // Convert view.aspx to download.aspx
+            downloadUrl = downloadUrl.replace('view.aspx', 'download.aspx');
+          }
+          // Add download parameter if not present
+          if (!downloadUrl.includes('download=1')) {
+            downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
+          }
+        }
+        // Method 3: If it's a sharepoint.com link
+        else if (downloadUrl.includes('sharepoint.com')) {
+          if (!downloadUrl.includes('download=1')) {
+            downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
+          }
+        }
+        
+        console.log('📎 Original link:', shareUrl);
+        console.log('📥 Converted to download:', downloadUrl);
+        return downloadUrl;
+      }
+
+      // Local fallback database
       const localDatabase = {
         "PS-001": {
           psSr: "PS-001",
@@ -609,14 +641,14 @@
       }
 
       // ============================================
-      // EXCEL DATA FETCHING
+      // EXCEL DATA PARSING
       // ============================================
       function parseCSVToDatabase(csvText) {
         const lines = csvText.split('\n').filter(line => line.trim());
         if (lines.length < 2) return null;
         
         const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-        console.log('📋 Excel Headers found:', headers);
+        console.log('📋 Excel Headers:', headers);
         
         const database = {};
         
@@ -652,35 +684,57 @@
       }
 
       async function fetchFromOneDrive(shareUrl) {
-        // Convert OneDrive share link to direct download
-        let downloadUrl = shareUrl;
+        // Convert to direct download link
+        const downloadUrl = convertOneDriveLink(shareUrl);
         
-        // Handle 1drv.ms short links
-        if (downloadUrl.includes('1drv.ms')) {
-          downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
+        console.log('📥 Attempting to download Excel...');
+        
+        // Try multiple methods to fetch the file
+        const methods = [
+          // Method 1: Direct fetch
+          async () => {
+            const response = await fetch(downloadUrl, { 
+              redirect: 'follow',
+              headers: { 'Accept': 'text/csv, application/vnd.ms-excel, application/octet-stream' }
+            });
+            if (!response.ok) throw new Error('Direct fetch failed');
+            return await response.text();
+          },
+          // Method 2: Fetch with no-cors (may work in some cases)
+          async () => {
+            const response = await fetch(downloadUrl, { 
+              mode: 'no-cors',
+              redirect: 'follow'
+            });
+            return await response.text();
+          }
+        ];
+        
+        let csvText = null;
+        let lastError = null;
+        
+        for (const method of methods) {
+          try {
+            csvText = await method();
+            if (csvText && csvText.trim().length > 0 && !csvText.trim().startsWith('<!DOCTYPE')) {
+              break;
+            }
+          } catch (error) {
+            lastError = error;
+            console.log('Method failed, trying next...');
+          }
         }
         
-        console.log('📥 Fetching Excel from:', downloadUrl);
-        
-        const response = await fetch(downloadUrl, { 
-          redirect: 'follow',
-          headers: { 'Accept': 'text/csv, application/vnd.ms-excel, application/octet-stream' }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Cannot access Excel file (HTTP ${response.status})`);
-        }
-        
-        const csvText = await response.text();
-        
-        // Check if it's actually CSV or HTML (OneDrive sometimes returns HTML)
-        if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
-          throw new Error('OneDrive returned a webpage instead of Excel data. Make sure the link is shared as "Anyone with the link can view"');
+        if (!csvText || csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
+          throw new Error('OneDrive returned a webpage instead of Excel data. Make sure:\n' +
+            '1. File is shared as "Anyone with the link can view"\n' +
+            '2. Link is correct\n' +
+            '3. File is an Excel (.xlsx) file');
         }
         
         const database = parseCSVToDatabase(csvText);
         if (!database || Object.keys(database).length === 0) {
-          throw new Error('No valid data found in Excel file. Check column headers.');
+          throw new Error('No valid data found. Check column headers: PS-SR#, Cable SR#, Description, Times Part No., Length, Connector - A, Connector-B');
         }
         
         return database;
@@ -690,15 +744,20 @@
         if (cachedDatabase) return cachedDatabase;
         
         try {
-          showMessage('info', '📥 Loading data from OneDrive Excel...');
-          cachedDatabase = await fetchFromOneDrive(ONEDRIVE_EXCEL_LINK);
-          updateBackendStatus(true, 'OneDrive Excel Connected (' + Object.keys(cachedDatabase).length + ' cables)');
-          showMessage('success', '✅ Excel data loaded successfully');
+          showMessage('info', '📥 Connecting to OneDrive Excel...');
+          updateBackendStatus(false, 'Connecting to Excel...');
+          
+          cachedDatabase = await fetchFromOneDrive(ONEDRIVE_SHARE_LINK);
+          
+          const count = Object.keys(cachedDatabase).length;
+          updateBackendStatus(true, `✅ OneDrive Connected (${count} cables)`);
+          showMessage('success', `✅ Loaded ${count} cables from Excel`);
           return cachedDatabase;
+          
         } catch (error) {
           console.error('❌ Excel load error:', error);
-          updateBackendStatus(false, 'Using Local Database (Excel unavailable)');
-          showMessage('error', '⚠️ Cannot load Excel: ' + error.message + '. Using local database instead.');
+          updateBackendStatus(false, 'Using Local Database');
+          showMessage('error', '⚠️ Using local database: ' + error.message);
           cachedDatabase = localDatabase;
           return localDatabase;
         }
@@ -711,7 +770,7 @@
         const cable = database[cleanPS];
         if (cable) return cable;
         
-        throw new Error(`PS-SR# "${cleanPS}" not found. Available: ${Object.keys(database).join(', ')}`);
+        throw new Error(`PS-SR# "${cleanPS}" not found. Available: ${Object.keys(database).slice(0, 5).join(', ')}...`);
       }
 
       // ============================================
@@ -808,7 +867,7 @@
       }
 
       // ============================================
-      // QR SCANNER
+      // QR SCANNER (same as before)
       // ============================================
       function updateOverlay() {
         const readerEl = els.readerDiv;
@@ -940,9 +999,9 @@
       // INITIALIZATION
       // ============================================
       console.log('📡 RF Cable Scanner Ready');
-      console.log('🔗 Excel Link:', ONEDRIVE_EXCEL_LINK);
+      console.log('🔗 Excel Link:', ONEDRIVE_SHARE_LINK);
       
-      // Pre-load Excel data on startup
+      // Pre-load Excel data
       loadDatabase().then(() => {
         console.log('✅ Excel data pre-loaded');
       });
