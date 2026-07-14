@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>RF Cable Scanner | PS-SR# QR System</title>
+  <title>RF Cable Scanner | PS-SR# System</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -194,10 +194,6 @@
       height: 100% !important;
     }
 
-    #reader video {
-      object-fit: cover;
-    }
-
     .scanner-overlay {
       position: absolute;
       top: 0;
@@ -242,10 +238,10 @@
       z-index: 13;
     }
 
-    .corner-tl { top: calc(50% - 113px); left: calc(50% - 113px); border-width: 4px 0 0 4px; border-radius: 4px 0 0 0; }
-    .corner-tr { top: calc(50% - 113px); right: calc(50% - 113px); border-width: 4px 4px 0 0; border-radius: 0 4px 0 0; }
-    .corner-bl { bottom: calc(50% - 113px); left: calc(50% - 113px); border-width: 0 0 4px 4px; border-radius: 0 0 0 4px; }
-    .corner-br { bottom: calc(50% - 113px); right: calc(50% - 113px); border-width: 0 4px 4px 0; border-radius: 0 0 4px 0; }
+    .corner-tl { top: calc(50% - 113px); left: calc(50% - 113px); border-width: 4px 0 0 4px; }
+    .corner-tr { top: calc(50% - 113px); right: calc(50% - 113px); border-width: 4px 4px 0 0; }
+    .corner-bl { bottom: calc(50% - 113px); left: calc(50% - 113px); border-width: 0 0 4px 4px; }
+    .corner-br { bottom: calc(50% - 113px); right: calc(50% - 113px); border-width: 0 4px 4px 0; }
 
     .scan-line {
       position: absolute;
@@ -403,12 +399,6 @@
       border: 1px solid #2a3340;
     }
 
-    .empty-state .icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    /* Debug panel */
     .debug-panel {
       background: #1a1f2b;
       border-radius: 1rem;
@@ -436,20 +426,18 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Header -->
     <div class="header">
       <h1>📡 RF Cable Scanner</h1>
-      <div class="subtitle">Scan PS-SR# QR Code to View Cable Details</div>
+      <div class="subtitle">Scan QR Code or Type PS-SR# Manually</div>
     </div>
 
-    <!-- Scanner Section -->
     <div class="scanner-section">
       <div class="search-box">
         <input 
           type="text" 
           id="psSrInput" 
           class="serial-input" 
-          placeholder="Enter PS-SR# (e.g., PS-RFCBL-1)"
+          placeholder="Type PS-SR# (e.g., PS-RFCBL-1)"
           autocomplete="off"
           autofocus
         >
@@ -459,16 +447,13 @@
       <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
         <button class="btn btn-scan" id="scanToggleBtn">📷 Scan QR Code</button>
         <button class="btn btn-outline" id="reloadBtn">🔄 Reload Excel</button>
-        <button class="btn btn-outline" id="debugBtn">🐛 Debug</button>
       </div>
 
-      <!-- Backend Status -->
       <div class="backend-status" id="backendStatus">
         <span class="status-dot" id="backendDot"></span>
-        <span id="backendStatusText">Backend: Connecting to Excel...</span>
+        <span id="backendStatusText">Backend: Loading Excel...</span>
       </div>
 
-      <!-- Scanner -->
       <div class="scanner-wrapper" id="scannerWrapper">
         <div id="reader"></div>
         <div class="scanner-overlay">
@@ -486,34 +471,26 @@
         </div>
       </div>
 
-      <!-- Messages -->
       <div class="message error" id="errorMsg"><span>⚠️</span><span id="errorText"></span></div>
       <div class="message success" id="successMsg"><span>✅</span><span id="successText"></span></div>
       <div class="message info" id="infoMsg"><span>ℹ️</span><span id="infoText"></span></div>
-
-      <!-- Debug Panel -->
-      <div class="debug-panel" id="debugPanel"></div>
     </div>
 
-    <!-- Cable Dashboard -->
     <div class="cable-dashboard" id="cableDashboard">
       <div class="dashboard-header">
         <div class="ps-sr-display">PS-SR# <span id="psSrDisplay">---</span></div>
         <div class="cable-id-display" id="cableSrDisplay">---</div>
       </div>
-
       <div class="specs-grid" id="specsGrid"></div>
-
       <div class="footer-note">
         <span>📋 <span id="descriptionDisplay">---</span></span>
         <span>🔢 Times Part No: <span id="partNoDisplay">---</span></span>
       </div>
     </div>
 
-    <!-- Empty State -->
     <div class="empty-state" id="emptyState">
       <div class="icon">📡</div>
-      <h3>Scan PS-SR# QR Code or Enter Manually</h3>
+      <h3>Type PS-SR# or Scan QR Code</h3>
       <p>Cable details will appear here</p>
     </div>
   </div>
@@ -521,18 +498,16 @@
   <script>
     (function() {
       // ============================================
-      // 🔴 PUT YOUR ONEDRIVE EXCEL LINK HERE 🔴
+      // 🔴 YOUR SHAREPOINT EXCEL LINK 🔴
       // ============================================
-      const ONEDRIVE_EXCEL_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAT0FQZCnBVG0y5F267YxoN8?e=j9q2AW';
+      const SHAREPOINT_EXCEL_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAT0FQZCnBVG0y5F267YxoN8?e=bPlTn7';
       // ============================================
 
-      // DOM Elements
       const els = {
         psSrInput: document.getElementById('psSrInput'),
         searchBtn: document.getElementById('searchBtn'),
         scanToggleBtn: document.getElementById('scanToggleBtn'),
         reloadBtn: document.getElementById('reloadBtn'),
-        debugBtn: document.getElementById('debugBtn'),
         scannerWrapper: document.getElementById('scannerWrapper'),
         readerDiv: document.getElementById('reader'),
         scanStatusText: document.getElementById('scanStatusText'),
@@ -551,23 +526,12 @@
         partNoDisplay: document.getElementById('partNoDisplay'),
         backendStatus: document.getElementById('backendStatus'),
         backendDot: document.getElementById('backendDot'),
-        backendStatusText: document.getElementById('backendStatusText'),
-        debugPanel: document.getElementById('debugPanel')
+        backendStatusText: document.getElementById('backendStatusText')
       };
 
       let html5QrCode = null;
       let isScanning = false;
-      let cableDatabase = {}; // Will be populated from Excel only
-
-      // ============================================
-      // DEBUG LOGGING
-      // ============================================
-      function debugLog(message) {
-        console.log(message);
-        const time = new Date().toLocaleTimeString();
-        els.debugPanel.innerHTML += `<div>[${time}] ${message}</div>`;
-        els.debugPanel.scrollTop = els.debugPanel.scrollHeight;
-      }
+      let cableDatabase = {};
 
       // ============================================
       // UI HELPERS
@@ -601,75 +565,149 @@
       }
 
       // ============================================
-      // EXCEL PARSING - IMPROVED
+      // SHAREPOINT EXCEL FETCH
       // ============================================
-      function parseExcelData(csvText) {
-        debugLog('📋 Starting to parse Excel data...');
-        debugLog(`Raw data length: ${csvText.length} characters`);
+      function convertSharePointLink(sharePointUrl) {
+        console.log('🔗 Original SharePoint URL:', sharePointUrl);
         
-        // Show first 200 chars for debugging
-        debugLog(`First 200 chars: ${csvText.substring(0, 200)}`);
+        // Extract the file path from the SharePoint URL
+        // Format: https://domain.sharepoint.com/:x:/g/personal/user_domain/HASH?e=xxx
         
-        const lines = csvText.split('\n').filter(line => line.trim().length > 0);
-        debugLog(`Found ${lines.length} lines in file`);
+        const url = new URL(sharePointUrl);
+        const pathParts = url.pathname.split('/');
+        
+        // The file ID is typically the last part before query params
+        let fileId = '';
+        for (let i = pathParts.length - 1; i >= 0; i--) {
+          if (pathParts[i] && pathParts[i].length > 10) {
+            fileId = pathParts[i];
+            break;
+          }
+        }
+        
+        console.log('📁 File ID:', fileId);
+        
+        // Get the base SharePoint site URL
+        const baseUrl = url.origin;
+        const sitePath = url.pathname.substring(0, url.pathname.indexOf('/personal/') + 1) || url.pathname;
+        
+        // Try multiple API endpoints
+        const apiUrls = [
+          // Method 1: Direct file content endpoint
+          `${baseUrl}/_api/web/GetFileByServerRelativeUrl('${url.pathname}')/$value`,
+          
+          // Method 2: Using the file ID
+          `${baseUrl}/_api/web/GetFileById('${fileId}')/$value`,
+        ];
+        
+        console.log('📥 API URLs to try:', apiUrls);
+        return apiUrls;
+      }
+
+      async function fetchFromSharePoint(sharePointUrl) {
+        console.log('📥 Fetching from SharePoint...');
+        
+        const apiUrls = convertSharePointLink(sharePointUrl);
+        
+        for (const apiUrl of apiUrls) {
+          try {
+            console.log('🔄 Trying:', apiUrl);
+            
+            const response = await fetch(apiUrl, {
+              headers: {
+                'Accept': 'application/octet-stream, */*',
+              },
+              redirect: 'follow'
+            });
+            
+            console.log('📡 Response:', response.status, response.statusText);
+            
+            if (response.ok) {
+              const text = await response.text();
+              console.log('📄 Received', text.length, 'characters');
+              console.log('📄 Preview:', text.substring(0, 200));
+              return text;
+            }
+          } catch (error) {
+            console.log('❌ Failed:', apiUrl, error.message);
+          }
+        }
+        
+        // If API methods fail, try direct download with different formats
+        console.log('🔄 Trying direct download methods...');
+        
+        const downloadFormats = [
+          sharePointUrl + '&download=1',
+          sharePointUrl.replace(/:x:/g, '/_layouts/15/download.aspx?SourceUrl='),
+        ];
+        
+        for (const downloadUrl of downloadFormats) {
+          try {
+            console.log('🔄 Trying:', downloadUrl);
+            const response = await fetch(downloadUrl, { redirect: 'follow' });
+            if (response.ok) {
+              const text = await response.text();
+              if (!text.startsWith('<!DOCTYPE') && !text.startsWith('<html')) {
+                return text;
+              }
+            }
+          } catch (error) {
+            console.log('❌ Failed:', downloadUrl);
+          }
+        }
+        
+        throw new Error('Cannot access SharePoint file. Try downloading as CSV from Excel and using that instead.');
+      }
+
+      function parseCSVData(csvText) {
+        console.log('📋 Parsing CSV data...');
+        console.log('📋 Raw preview:', csvText.substring(0, 500));
+        
+        const lines = csvText.split('\n').filter(line => line.trim());
+        console.log('📋 Lines found:', lines.length);
         
         if (lines.length < 2) {
-          debugLog('❌ ERROR: File has less than 2 lines (need header + at least 1 data row)');
+          console.error('❌ Not enough lines');
           return {};
         }
         
-        // Parse header
-        const headerLine = lines[0];
-        debugLog(`Header line: ${headerLine}`);
-        
-        // Split by comma, but handle quoted values
-        const headers = headerLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').trim());
-        debugLog(`Headers found: ${JSON.stringify(headers)}`);
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, '').trim());
+        console.log('📋 Headers:', headers);
         
         const database = {};
         
         for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
+          const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, '').trim());
           
-          // Split by comma, handle quoted values
-          const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, '').trim());
+          if (values.length < 2) continue;
           
-          if (values.length < 2) {
-            debugLog(`⚠️ Skipping line ${i+1}: too few values`);
-            continue;
-          }
-          
-          // Create row object
           const row = {};
           headers.forEach((header, index) => {
             row[header] = values[index] || '';
           });
           
-          debugLog(`Row ${i+1} raw: ${JSON.stringify(row)}`);
-          
-          // Find PS-SR# - try multiple possible column names
+          // Find PS-SR# column - check multiple possibilities
           let psSr = '';
           for (const key of Object.keys(row)) {
-            const keyLower = key.toLowerCase().replace(/[\s\-_#]+/g, '');
-            if (keyLower === 'pssr' || keyLower === 'pssr#' || keyLower === 'ps-sr' || keyLower === 'pssrno' || keyLower === 'pssrnumber') {
+            const cleanKey = key.toLowerCase().replace(/[\s\-_#]+/g, '');
+            if (cleanKey === 'pssr' || cleanKey === 'pssrno' || cleanKey.includes('pssr')) {
               psSr = row[key];
               break;
             }
           }
           
-          // Also check first column as fallback
-          if (!psSr && headers.length > 0) {
+          // If no PS-SR# column found, use first column
+          if (!psSr && values.length > 0) {
             psSr = values[0];
-            debugLog(`⚠️ PS-SR# column not found by name, using first column: "${psSr}"`);
+            console.log('⚠️ Using first column as PS-SR#:', psSr);
           }
           
           if (psSr && psSr.trim()) {
-            const psSrClean = psSr.trim();
+            const cleanPS = psSr.trim();
             
-            // Find other fields - try multiple possible names
-            const findField = (possibleNames) => {
-              for (const name of possibleNames) {
+            // Find other fields
+            const findField = (names) => {
+              for (const name of names) {
                 for (const key of Object.keys(row)) {
                   if (key.toLowerCase().replace(/[\s\-_#]+/g, '') === name.toLowerCase().replace(/[\s\-_#]+/g, '')) {
                     return row[key];
@@ -679,129 +717,92 @@
               return '';
             };
             
-            database[psSrClean] = {
-              psSr: psSrClean,
-              cableSr: findField(['cablesr', 'cablesr#', 'cable#', 'cableserial', 'cableserial#']),
-              description: findField(['description', 'desc', 'cabledescription']),
-              partNo: findField(['timespartno', 'timespartno.', 'partno', 'partnumber', 'timespart']),
-              length: findField(['length', 'cablelength']),
-              connectorA: findField(['connector-a', 'connectora', 'connector a', 'conn-a']),
-              connectorB: findField(['connector-b', 'connectorb', 'connector b', 'conn-b']),
-              frequency: findField(['frequency', 'freq', 'maxfrequency']),
-              status: findField(['status', 'condition']),
-              location: findField(['location', 'site', 'project'])
+            database[cleanPS] = {
+              psSr: cleanPS,
+              cableSr: findField(['cablesr', 'cablesr#', 'cable#', 'cableserial']),
+              description: findField(['description', 'desc']),
+              partNo: findField(['timespartno', 'timespartno.', 'partno', 'partnumber']),
+              length: findField(['length']),
+              connectorA: findField(['connector-a', 'connectora', 'connector a']),
+              connectorB: findField(['connector-b', 'connectorb', 'connector b']),
+              frequency: findField(['frequency', 'freq']),
+              status: findField(['status']),
+              location: findField(['location', 'project'])
             };
             
-            debugLog(`✅ Added: ${psSrClean} -> ${database[psSrClean].cableSr || '(no cable SR)'}`);
+            console.log(`✅ Added: ${cleanPS}`, database[cleanPS]);
           }
         }
         
-        const count = Object.keys(database).length;
-        debugLog(`📊 Total cables loaded: ${count}`);
-        debugLog(`📊 Keys: ${Object.keys(database).join(', ')}`);
-        
+        console.log('📊 Total loaded:', Object.keys(database).length);
+        console.log('📊 Keys:', Object.keys(database));
         return database;
       }
 
       async function loadExcelFile() {
         updateBackendStatus(false, 'Loading Excel...');
-        debugLog('🔄 Starting Excel load...');
-        debugLog(`📎 Link: ${ONEDRIVE_EXCEL_LINK}`);
+        console.log('🔄 Loading Excel...');
         
         try {
-          // Convert OneDrive link to direct download
-          let downloadUrl = ONEDRIVE_EXCEL_LINK;
-          
-          if (downloadUrl.includes('1drv.ms')) {
-            downloadUrl = downloadUrl.split('?')[0] + '?download=1';
-          } else if (downloadUrl.includes('onedrive.live.com') || downloadUrl.includes('sharepoint.com')) {
-            if (!downloadUrl.includes('download=1')) {
-              downloadUrl += (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
-            }
-          }
-          
-          debugLog(`📥 Download URL: ${downloadUrl}`);
-          
-          const response = await fetch(downloadUrl, {
-            redirect: 'follow',
-            headers: {
-              'Accept': 'text/csv, application/vnd.ms-excel, application/octet-stream, */*'
-            }
-          });
-          
-          debugLog(`📡 Response status: ${response.status}`);
-          debugLog(`📡 Content-Type: ${response.headers.get('content-type')}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const text = await response.text();
-          debugLog(`📄 Received ${text.length} characters`);
-          
-          // Check if it's HTML (error page)
-          if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-            throw new Error('Received HTML instead of Excel data. Link may require authentication.');
-          }
-          
-          // Parse the data
-          const database = parseExcelData(text);
+          const csvText = await fetchFromSharePoint(SHAREPOINT_EXCEL_LINK);
+          const database = parseCSVData(csvText);
           
           if (Object.keys(database).length === 0) {
-            throw new Error('No cables found in Excel. Check column headers and data.');
+            throw new Error('No cables found in Excel');
           }
           
           cableDatabase = database;
-          updateBackendStatus(true, `✅ Excel Loaded (${Object.keys(database).length} cables)`);
-          showMessage('success', `✅ Loaded ${Object.keys(database).length} cables from Excel`);
-          
-          debugLog('✅ Excel load complete!');
-          return database;
+          const count = Object.keys(database).length;
+          updateBackendStatus(true, `✅ Loaded ${count} cables`);
+          showMessage('success', `✅ Loaded ${count} cables from Excel`);
+          console.log('✅ Excel load complete!');
           
         } catch (error) {
-          debugLog(`❌ ERROR: ${error.message}`);
-          updateBackendStatus(false, '❌ Excel Load Failed');
-          showMessage('error', 'Cannot load Excel: ' + error.message);
+          console.error('❌ Load failed:', error);
+          updateBackendStatus(false, '❌ Excel not loaded');
+          showMessage('error', error.message);
           cableDatabase = {};
-          throw error;
         }
       }
 
-      async function getCableData(psSrNumber) {
-        const searchTerm = psSrNumber.trim();
-        debugLog(`🔍 Searching for: "${searchTerm}"`);
-        debugLog(`📊 Database has ${Object.keys(cableDatabase).length} entries: ${Object.keys(cableDatabase).join(', ')}`);
+      // ============================================
+      // SEARCH & DISPLAY
+      // ============================================
+      function findCable(searchTerm) {
+        const term = searchTerm.trim();
+        console.log('🔍 Searching:', term);
+        console.log('📊 Available keys:', Object.keys(cableDatabase));
         
-        // Try exact match
-        if (cableDatabase[searchTerm]) {
-          debugLog(`✅ Exact match found: ${searchTerm}`);
-          return cableDatabase[searchTerm];
+        // Exact match
+        if (cableDatabase[term]) {
+          console.log('✅ Exact match:', term);
+          return cableDatabase[term];
         }
         
-        // Try case-insensitive match
-        const searchUpper = searchTerm.toUpperCase();
+        // Case insensitive
+        const upperTerm = term.toUpperCase();
         for (const key of Object.keys(cableDatabase)) {
-          if (key.toUpperCase() === searchUpper) {
-            debugLog(`✅ Case-insensitive match: ${key}`);
+          if (key.toUpperCase() === upperTerm) {
+            console.log('✅ Case-insensitive match:', key);
             return cableDatabase[key];
           }
         }
         
-        // Try partial match
-        for (const key of Object.keys(cableDatabase)) {
-          if (key.toUpperCase().includes(searchUpper) || searchUpper.includes(key.toUpperCase())) {
-            debugLog(`✅ Partial match: ${key}`);
-            return cableDatabase[key];
-          }
+        // Partial match (contains)
+        const matches = Object.keys(cableDatabase).filter(k => 
+          k.toUpperCase().includes(upperTerm) || upperTerm.includes(k.toUpperCase())
+        );
+        
+        if (matches.length === 1) {
+          console.log('✅ Partial match:', matches[0]);
+          return cableDatabase[matches[0]];
+        } else if (matches.length > 1) {
+          throw new Error(`Multiple matches: ${matches.join(', ')}`);
         }
         
-        debugLog(`❌ No match found for: ${searchTerm}`);
-        throw new Error(`"${searchTerm}" not found. Available: ${Object.keys(cableDatabase).slice(0, 5).join(', ')}...`);
+        throw new Error(`"${term}" not found. Available: ${Object.keys(cableDatabase).slice(0, 5).join(', ')}...`);
       }
 
-      // ============================================
-      // RENDER CABLE DATA
-      // ============================================
       function renderCableData(cable) {
         els.cableDashboard.classList.add('visible');
         els.emptyState.style.display = 'none';
@@ -813,72 +814,47 @@
         
         els.specsGrid.innerHTML = '';
         
-        const addSpec = (label, value, highlight = false) => {
-          const div = document.createElement('div');
-          div.className = 'spec-item';
-          div.innerHTML = `
-            <div class="spec-label">${label}</div>
-            <div class="spec-value ${highlight ? 'highlight' : ''}">${value || '—'}</div>
-          `;
-          els.specsGrid.appendChild(div);
-        };
-        
-        // Description (full width)
         const descDiv = document.createElement('div');
         descDiv.className = 'spec-item full-width';
-        descDiv.innerHTML = `
-          <div class="spec-label">Description</div>
-          <div class="spec-value highlight">${cable.description || '—'}</div>
-        `;
+        descDiv.innerHTML = `<div class="spec-label">Description</div><div class="spec-value highlight">${cable.description || '—'}</div>`;
         els.specsGrid.appendChild(descDiv);
+        
+        const addSpec = (label, value) => {
+          const div = document.createElement('div');
+          div.className = 'spec-item';
+          div.innerHTML = `<div class="spec-label">${label}</div><div class="spec-value">${value || '—'}</div>`;
+          els.specsGrid.appendChild(div);
+        };
         
         addSpec('Times Part No.', cable.partNo);
         addSpec('Length', cable.length);
         
-        // Connectors (full width)
         const connDiv = document.createElement('div');
         connDiv.className = 'spec-item full-width';
         connDiv.innerHTML = `
           <div class="spec-label">Connectors</div>
           <div style="display:flex; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap;">
             <span class="connector-badge">🔌 A: ${cable.connectorA || '—'}</span>
-            <span style="color:#6b7d90; align-self:center;">→</span>
+            <span style="color:#6b7d90;">→</span>
             <span class="connector-badge">🔌 B: ${cable.connectorB || '—'}</span>
-          </div>
-        `;
+          </div>`;
         els.specsGrid.appendChild(connDiv);
-        
-        // Additional info
-        if (cable.frequency || cable.status || cable.location) {
-          const infoDiv = document.createElement('div');
-          infoDiv.className = 'spec-item full-width';
-          infoDiv.innerHTML = `
-            <div style="display:flex; flex-wrap:wrap; gap:1rem; font-size:0.85rem;">
-              ${cable.frequency ? `<span>📶 Freq: <strong>${cable.frequency}</strong></span>` : ''}
-              ${cable.status ? `<span>📊 Status: <strong>${cable.status}</strong></span>` : ''}
-              ${cable.location ? `<span>📍 Location: <strong>${cable.location}</strong></span>` : ''}
-            </div>
-          `;
-          els.specsGrid.appendChild(infoDiv);
-        }
         
         els.psSrInput.value = cable.psSr || '';
         showMessage('success', `✅ ${cable.psSr} loaded`);
       }
 
-      async function lookupCable(psSrNumber) {
-        if (!psSrNumber?.trim()) {
-          showMessage('error', 'Please enter a PS-SR# or scan a QR code');
+      async function lookupCable(searchTerm) {
+        if (!searchTerm?.trim()) {
+          showMessage('error', 'Please type a PS-SR# or scan QR code');
           return;
         }
 
-        // If database is empty, try loading Excel first
         if (Object.keys(cableDatabase).length === 0) {
-          showMessage('info', '📥 Loading Excel data first...');
-          try {
-            await loadExcelFile();
-          } catch (error) {
-            showMessage('error', 'Cannot load Excel: ' + error.message);
+          showMessage('info', '📥 Loading Excel first...');
+          await loadExcelFile();
+          if (Object.keys(cableDatabase).length === 0) {
+            showMessage('error', 'Excel not loaded. Check connection and try 🔄 Reload');
             return;
           }
         }
@@ -886,9 +862,9 @@
         try {
           els.cableDashboard.classList.add('visible');
           els.emptyState.style.display = 'none';
-          els.specsGrid.innerHTML = '<div class="spec-item full-width" style="text-align:center;color:#6b7d90;">⏳ Searching database...</div>';
+          els.specsGrid.innerHTML = '<div class="spec-item full-width" style="text-align:center;color:#6b7d90;">⏳ Searching...</div>';
 
-          const cable = await getCableData(psSrNumber);
+          const cable = findCable(searchTerm);
           renderCableData(cable);
         } catch (error) {
           showMessage('error', error.message);
@@ -928,7 +904,7 @@
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          showMessage('error', 'Camera access denied.');
+          showMessage('error', 'Camera access denied');
           return;
         }
 
@@ -947,7 +923,6 @@
             (decodedText) => {
               els.scanStatusText.textContent = '✅ Detected!';
               els.scanStatusText.style.color = '#27ae60';
-              
               setTimeout(() => {
                 stopScanner();
                 lookupCable(decodedText.trim());
@@ -963,10 +938,9 @@
           els.scanToggleBtn.textContent = '⏹️ Stop';
           els.scanToggleBtn.classList.add('scanning');
           setTimeout(updateOverlay, 500);
-          window.addEventListener('resize', updateOverlay);
           
         } catch (err) {
-          showMessage('error', 'Camera error: ' + err.message);
+          showMessage('error', 'Camera error');
           stopScanner();
         }
       }
@@ -978,9 +952,6 @@
             els.scannerWrapper.classList.remove('active');
             els.scanToggleBtn.textContent = '📷 Scan QR Code';
             els.scanToggleBtn.classList.remove('scanning');
-            els.scanStatusText.textContent = '📷 Align QR code';
-            els.scanStatusText.style.color = '#f7b731';
-            window.removeEventListener('resize', updateOverlay);
           });
         }
       }
@@ -1002,39 +973,24 @@
         cableDatabase = {};
         els.cableDashboard.classList.remove('visible');
         els.emptyState.style.display = '';
-        debugLog('🔄 Manual reload triggered');
-        els.debugPanel.innerHTML = '';
-        try {
-          await loadExcelFile();
-        } catch (error) {
-          // Error already shown
-        }
-      });
-
-      els.debugBtn.addEventListener('click', () => {
-        els.debugPanel.classList.toggle('show');
-        if (els.debugPanel.classList.contains('show')) {
-          debugLog('🐛 Debug panel opened');
-          debugLog(`📊 Current database keys: ${Object.keys(cableDatabase).join(', ') || '(empty)'}`);
-        }
+        await loadExcelFile();
       });
 
       // ============================================
       // INITIALIZATION
       // ============================================
       console.log('📡 RF Cable Scanner Ready');
+      console.log('📎 SharePoint Link:', SHAREPOINT_EXCEL_LINK);
+      console.log('💡 Try typing PS-RFCBL-1 manually in the search box');
       
-      // Auto-load Excel on startup
-      loadExcelFile().catch(() => {
-        updateBackendStatus(false, 'Excel not loaded. Click 🔄 Reload');
-      });
+      // Try loading Excel on startup
+      loadExcelFile();
       
       // URL parameter
       const urlParams = new URLSearchParams(window.location.search);
       const psParam = urlParams.get('ps') || urlParams.get('cable');
       if (psParam) {
         els.psSrInput.value = psParam;
-        // Wait for Excel to load then search
         setTimeout(() => lookupCable(psParam), 2000);
       }
     })();
