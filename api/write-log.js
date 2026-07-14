@@ -79,7 +79,7 @@ export default async function handler(req, res) {
     // 5. Update dashboard stats
     // Get cable inventory to count total
     const inventoryResponse = await fetch(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/cable_inventory.csv`,
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/cables.csv`,
       {
         headers: {
           'Authorization': `token ${GITHUB_TOKEN}`,
