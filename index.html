@@ -1,13 +1,11 @@
-This is a complete HTML/CSS dashboard for tracking RF cable details, designed to work as a label with a QR code. You can host it directly on GitHub Pages.
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>RF Cable Label | QR Dashboard</title>
-  <!-- QR Code library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <title>RF Cable Scanner | QR Dashboard</title>
+  <!-- QR Scanner library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -18,131 +16,223 @@ This is a complete HTML/CSS dashboard for tracking RF cable details, designed to
     body {
       background: #f0f2f5;
       font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       min-height: 100vh;
-      padding: 1.5rem;
-      margin: 0;
-    }
-
-    /* dashboard card – mimics a cable label with QR */
-    .cable-dashboard {
-      max-width: 680px;
-      width: 100%;
-      background: #ffffff;
-      border-radius: 2.5rem;
-      box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.25);
-      overflow: hidden;
+      padding: 1rem;
       display: flex;
       flex-direction: column;
-      border: 1px solid rgba(0, 70, 120, 0.15);
-      transition: all 0.2s ease;
+      align-items: center;
     }
 
-    /* header – cable ID emphasis */
+    .app-container {
+      max-width: 700px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* Header / Scanner Section */
+    .scanner-section {
+      background: white;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border: 1px solid #e0e8f0;
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+      color: #0a2f44;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .title-icon {
+      background: #0a2f44;
+      color: white;
+      border-radius: 0.8rem;
+      padding: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .serial-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.85rem 1.2rem;
+      border: 2px solid #dce5ef;
+      border-radius: 2.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.5px;
+      background: #f8fafd;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .serial-input:focus {
+      border-color: #0a2f44;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(10,47,68,0.08);
+    }
+
+    .btn {
+      padding: 0.85rem 1.5rem;
+      border-radius: 2.5rem;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: #0a2f44;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #154a66;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #e8f0f8;
+      color: #0a2f44;
+    }
+
+    .btn-secondary:hover {
+      background: #d2e2f2;
+    }
+
+    .btn-scan {
+      background: #f7b731;
+      color: #0a2f44;
+      font-weight: 700;
+    }
+
+    .btn-scan:hover {
+      background: #f0a800;
+    }
+
+    .btn-scan.active {
+      background: #e74c3c;
+      color: white;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); }
+    }
+
+    #reader {
+      width: 100%;
+      border-radius: 1rem;
+      overflow: hidden;
+      margin-top: 1rem;
+      border: 2px solid #dce5ef;
+      display: none;
+    }
+
+    #reader.active {
+      display: block;
+    }
+
+    .scan-hint {
+      font-size: 0.8rem;
+      color: #5e6f7e;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Cable Dashboard Card */
+    .cable-dashboard {
+      background: #ffffff;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      border: 1px solid rgba(0, 70, 120, 0.15);
+      display: none;
+    }
+
+    .cable-dashboard.visible {
+      display: block;
+    }
+
     .dashboard-header {
       background: linear-gradient(105deg, #0a2f44 0%, #1c4b6e 100%);
-      padding: 1.8rem 2rem 1.4rem;
+      padding: 1.5rem 1.8rem;
       color: white;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 4px solid #f7b731;
-    }
-
-    .cable-title-group {
-      display: flex;
-      flex-direction: column;
+      gap: 1rem;
+      border-bottom: 3px solid #f7b731;
     }
 
     .cable-badge {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       letter-spacing: 2px;
       text-transform: uppercase;
       font-weight: 500;
       color: #c7e0f5;
-      margin-bottom: 0.3rem;
     }
 
     .cable-id {
-      font-size: 2.2rem;
+      font-size: 2rem;
       font-weight: 700;
-      line-height: 1.1;
-      word-break: break-word;
       color: white;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      flex-wrap: wrap;
     }
 
-    .qr-icon {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 0.3rem 0.7rem;
-      color: #0a2f44;
-      font-size: 0.9rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      letter-spacing: 0.4px;
-      background: #f7b731;
-      color: #0a2f44;
+    .status-badge {
+      background: #27ae60;
+      color: white;
+      padding: 0.3rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
     }
 
-    .qr-wrapper {
-      background: white;
-      border-radius: 1.2rem;
-      padding: 0.4rem;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .status-badge.warning {
+      background: #e67e22;
     }
 
-    #qrcode-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: white;
-      border-radius: 0.8rem;
-      line-height: 0;
+    .status-badge.error {
+      background: #c0392b;
     }
 
-    #qrcode-container canvas,
-    #qrcode-container img {
-      display: block;
-      border-radius: 0.7rem;
-      width: 80px;
-      height: 80px;
-    }
-
-    /* cable specs grid */
     .specs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 1.2rem;
-      padding: 1.8rem 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem 1.8rem;
       background: #f9fcff;
     }
 
     .spec-item {
       background: #ffffff;
-      border-radius: 1.2rem;
+      border-radius: 1rem;
       padding: 0.9rem 1rem;
-      box-shadow: 0 6px 14px rgba(0, 32, 64, 0.08);
+      box-shadow: 0 4px 12px rgba(0, 32, 64, 0.06);
       border: 1px solid #e9f0f5;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.15s;
-    }
-
-    .spec-item:hover {
-      transform: translateY(-2px);
-      border-color: #b6d6f0;
     }
 
     .spec-label {
@@ -151,289 +241,458 @@ This is a complete HTML/CSS dashboard for tracking RF cable details, designed to
       letter-spacing: 0.8px;
       font-weight: 600;
       color: #4a6275;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.2rem;
     }
 
     .spec-value {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 650;
       color: #0b2b3f;
-      word-break: break-word;
-      display: flex;
-      align-items: baseline;
-      gap: 0.25rem;
-      flex-wrap: wrap;
-    }
-
-    .spec-unit {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: #5e6f7e;
-      margin-left: 0.1rem;
     }
 
     .connector-badge {
       background: #e5eff9;
       color: #0a3147;
-      padding: 0.25rem 0.75rem;
-      border-radius: 2rem;
-      font-size: 0.9rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: 1.5rem;
+      font-size: 0.85rem;
       font-weight: 600;
       display: inline-block;
-      margin-top: 0.2rem;
-      width: fit-content;
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    .detail-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      border-top: 1px solid #dee9f2;
-      margin-top: 0.7rem;
-      padding-top: 0.7rem;
-      font-size: 0.9rem;
-      color: #1f4059;
     }
 
     .footer-note {
       background: #f0f4fa;
-      padding: 1rem 2rem;
+      padding: 0.8rem 1.8rem;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      border-top: 1px solid #d0ddea;
       font-size: 0.8rem;
       color: #2c4b64;
-      font-weight: 500;
+      border-top: 1px solid #d0ddea;
     }
 
-    .scan-me {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: white;
-      padding: 0.3rem 0.9rem;
-      border-radius: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem;
+      color: #7f8c8d;
     }
 
-    .url-hint {
-      background: #e1ebf7;
-      border-radius: 1.5rem;
-      padding: 0.2rem 1rem;
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: #003153;
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
     }
 
-    @media (max-width: 480px) {
-      body {
-        padding: 0.8rem;
-      }
-      .dashboard-header {
+    @media (max-width: 500px) {
+      .search-box {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
       }
-      .qr-wrapper {
-        align-self: flex-start;
+      .btn {
+        justify-content: center;
       }
       .specs-grid {
-        grid-template-columns: 1fr;
-        padding: 1.2rem;
-      }
-      .cable-id {
-        font-size: 1.8rem;
+        grid-template-columns: 1fr 1fr;
+        padding: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="cable-dashboard">
-    <!-- Header with dynamic cable ID and QR code -->
-    <div class="dashboard-header">
-      <div class="cable-title-group">
-        <span class="cable-badge">RF Cable Assembly</span>
-        <div class="cable-id">
-          <span id="cableIdentifier">CBL-5G-0421</span>
-          <span class="qr-icon">📡 QR</span>
+  <div class="app-container">
+    <!-- Scanner & Search Section -->
+    <div class="scanner-section">
+      <div class="app-title">
+        <span class="title-icon">📡</span>
+        RF Cable Scanner
+      </div>
+      
+      <div class="search-box">
+        <input 
+          type="text" 
+          id="serialInput" 
+          class="serial-input" 
+          placeholder="Enter serial number (e.g., CBL-5G-0421)"
+          autocomplete="off"
+        >
+        <button class="btn btn-primary" id="searchBtn">
+          🔍 Search
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+        <button class="btn btn-scan" id="scanToggleBtn">
+          📷 Scan QR Code
+        </button>
+        <button class="btn btn-secondary" id="demoBtn">
+          🎲 Load Demo Cable
+        </button>
+      </div>
+      
+      <div id="reader"></div>
+      <div class="scan-hint" id="scanHint">
+        💡 Point camera at the QR code on the cable label
+      </div>
+    </div>
+
+    <!-- Cable Dashboard (hidden until data loaded) -->
+    <div class="cable-dashboard" id="cableDashboard">
+      <div class="dashboard-header">
+        <div>
+          <div class="cable-badge">RF Cable Assembly</div>
+          <div class="cable-id" id="displayCableId">---</div>
+        </div>
+        <div>
+          <span class="status-badge" id="statusBadge">Active</span>
         </div>
       </div>
-      <div class="qr-wrapper">
-        <div id="qrcode-container"></div>
+
+      <div class="specs-grid" id="specsGrid">
+        <!-- Dynamically populated -->
+      </div>
+
+      <div class="footer-note">
+        <span id="lastTested">Last tested: ---</span>
+        <span id="projectInfo">Project: ---</span>
       </div>
     </div>
 
-    <!-- Technical specifications (editable via data attributes) -->
-    <div class="specs-grid" id="specsGrid">
-      <!-- Dynamic content rendered from JS to keep QR and data in sync -->
-    </div>
-
-    <!-- Additional meta / footer -->
-    <div class="footer-note">
-      <div class="scan-me">
-        <span>🔍</span> <span>Scan for digital record</span>
-      </div>
-      <div class="url-hint" id="dynamicUrlDisplay"></div>
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🔍</div>
+      <h3>Scan a QR code or enter a serial number</h3>
+      <p style="color: #95a5a6;">The cable details will appear here</p>
     </div>
   </div>
 
   <script>
     (function() {
-      // ----- RF CABLE DATA (customize these details for each cable) -----
-      const cableData = {
-        id: "CBL-5G-0421",
-        type: "LMR-400-UF",
-        length: "12.5",
-        lengthUnit: "ft",
-        impedance: "50",
-        impedanceUnit: "Ω",
-        connA: "N-Type (M)",
-        connB: "SMA (M)",
-        frequencyMax: "6 GHz",
-        status: "Tested • Pass",
-        date: "2026-03-15",
-        project: "Tower-A Sector 3"
+      // ============================================
+      // BACKEND SIMULATION - Replace with real API
+      // ============================================
+      const cableDatabase = {
+        "CBL-5G-0421": {
+          id: "CBL-5G-0421",
+          type: "LMR-400-UF",
+          length: "12.5",
+          lengthUnit: "ft",
+          impedance: "50",
+          impedanceUnit: "Ω",
+          connA: "N-Type (M)",
+          connB: "SMA (M)",
+          frequencyMax: "6 GHz",
+          status: "Tested • Pass",
+          date: "2026-03-15",
+          project: "Tower-A Sector 3",
+          vswr: "1.15:1",
+          loss: "0.85 dB"
+        },
+        "CBL-LMR-0192": {
+          id: "CBL-LMR-0192",
+          type: "LMR-240",
+          length: "8.2",
+          lengthUnit: "ft",
+          impedance: "50",
+          impedanceUnit: "Ω",
+          connA: "BNC (M)",
+          connB: "BNC (M)",
+          frequencyMax: "3 GHz",
+          status: "Tested • Pass",
+          date: "2026-06-28",
+          project: "Lab Bench 4",
+          vswr: "1.08:1",
+          loss: "0.45 dB"
+        },
+        "CBL-RG58-7734": {
+          id: "CBL-RG58-7734",
+          type: "RG-58",
+          length: "25.0",
+          lengthUnit: "ft",
+          impedance: "50",
+          impedanceUnit: "Ω",
+          connA: "SMA (M)",
+          connB: "SMA (M)",
+          frequencyMax: "1 GHz",
+          status: "Needs Retest",
+          date: "2025-11-02",
+          project: "Field Kit B",
+          vswr: "1.42:1",
+          loss: "2.1 dB"
+        },
+        "CBL-CF-9901": {
+          id: "CBL-CF-9901",
+          type: "CFD-400",
+          length: "3.0",
+          lengthUnit: "m",
+          impedance: "50",
+          impedanceUnit: "Ω",
+          connA: "7/16 DIN (M)",
+          connB: "N-Type (F)",
+          frequencyMax: "8 GHz",
+          status: "Damaged",
+          date: "2025-08-10",
+          project: "Roof Site 2",
+          vswr: "3.2:1",
+          loss: "4.5 dB"
+        }
       };
 
-      // Additional calculated / display helpers
-      const displayId = cableData.id;
-      // Build a URL that points to this GitHub Pages dashboard (or current page)
-      // For GitHub Pages, you can set a custom parameter. By default we use the current URL with ?cable=ID
-      const baseUrl = window.location.origin + window.location.pathname;
-      const cableParam = `?cable=${encodeURIComponent(displayId)}`;
-      const fullCableUrl = baseUrl + cableParam;
+      // ============================================
+      // DOM Elements
+      // ============================================
+      const serialInput = document.getElementById('serialInput');
+      const searchBtn = document.getElementById('searchBtn');
+      const scanToggleBtn = document.getElementById('scanToggleBtn');
+      const demoBtn = document.getElementById('demoBtn');
+      const readerDiv = document.getElementById('reader');
+      const scanHint = document.getElementById('scanHint');
+      const cableDashboard = document.getElementById('cableDashboard');
+      const emptyState = document.getElementById('emptyState');
+      const displayCableId = document.getElementById('displayCableId');
+      const statusBadge = document.getElementById('statusBadge');
+      const specsGrid = document.getElementById('specsGrid');
+      const lastTested = document.getElementById('lastTested');
+      const projectInfo = document.getElementById('projectInfo');
 
-      // Update header ID
-      const idSpan = document.getElementById('cableIdentifier');
-      if (idSpan) idSpan.textContent = displayId;
+      let html5QrCode = null;
+      let isScanning = false;
 
-      // Update dynamic URL display
-      const urlDisplay = document.getElementById('dynamicUrlDisplay');
-      if (urlDisplay) {
-        // Show a shortened version for label
-        urlDisplay.textContent = window.location.hostname + "/..." + cableParam;
+      // ============================================
+      // Fetch cable data (simulated backend call)
+      // ============================================
+      function fetchCableData(serialNumber) {
+        // Clean the serial number
+        const cleanSerial = serialNumber.trim().toUpperCase();
+        
+        // Simulate API call - Replace with actual fetch()
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            const cable = cableDatabase[cleanSerial];
+            if (cable) {
+              resolve(cable);
+            } else {
+              reject(new Error(`Cable "${cleanSerial}" not found in database`));
+            }
+          }, 300); // Simulate network delay
+        });
+
+        // REAL BACKEND IMPLEMENTATION:
+        // return fetch(`https://your-api.com/cables/${encodeURIComponent(cleanSerial)}`)
+        //   .then(response => {
+        //     if (!response.ok) throw new Error('Cable not found');
+        //     return response.json();
+        //   });
       }
 
-      // Render specs grid dynamically from cableData
-      const specsGrid = document.getElementById('specsGrid');
-      if (specsGrid) {
-        specsGrid.innerHTML = ''; // clear
+      // ============================================
+      // Render cable data to dashboard
+      // ============================================
+      function renderCableData(cable) {
+        // Show dashboard, hide empty state
+        cableDashboard.classList.add('visible');
+        emptyState.style.display = 'none';
 
-        // Helper to create spec item
-        function addSpecItem(label, value, unit = '', extraClass = '') {
-          const div = document.createElement('div');
-          div.className = `spec-item ${extraClass}`;
-          
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'spec-label';
-          labelSpan.textContent = label;
-          
-          const valueContainer = document.createElement('span');
-          valueContainer.className = 'spec-value';
-          valueContainer.innerHTML = `${value || '—'} ${unit ? `<span class="spec-unit">${unit}</span>` : ''}`;
-          
-          div.appendChild(labelSpan);
-          div.appendChild(valueContainer);
-          return div;
+        // Header
+        displayCableId.textContent = cable.id;
+
+        // Status badge
+        statusBadge.textContent = cable.status;
+        statusBadge.className = 'status-badge';
+        if (cable.status.toLowerCase().includes('damaged') || 
+            cable.status.toLowerCase().includes('fail')) {
+          statusBadge.classList.add('error');
+        } else if (cable.status.toLowerCase().includes('retest') || 
+                   cable.status.toLowerCase().includes('warning')) {
+          statusBadge.classList.add('warning');
         }
 
-        // Cable type and length
-        specsGrid.appendChild(addSpecItem('Cable Type', cableData.type));
-        specsGrid.appendChild(addSpecItem('Length', cableData.length, cableData.lengthUnit));
+        // Specs grid
+        specsGrid.innerHTML = '';
+
+        function addSpec(label, value, unit = '') {
+          const div = document.createElement('div');
+          div.className = 'spec-item';
+          div.innerHTML = `
+            <div class="spec-label">${label}</div>
+            <div class="spec-value">${value || '—'} ${unit ? `<small style="font-size:0.75rem;color:#5e6f7e;">${unit}</small>` : ''}</div>
+          `;
+          specsGrid.appendChild(div);
+        }
+
+        addSpec('Cable Type', cable.type);
+        addSpec('Length', cable.length, cable.lengthUnit);
+        addSpec('Impedance', cable.impedance, cable.impedanceUnit);
         
-        // Impedance
-        specsGrid.appendChild(addSpecItem('Impedance', cableData.impedance, cableData.impedanceUnit));
-        
-        // Connectors combined (nice visual)
+        // Connectors
         const connDiv = document.createElement('div');
         connDiv.className = 'spec-item';
         connDiv.innerHTML = `
-          <span class="spec-label">Connectors</span>
-          <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.2rem;">
-            <span class="connector-badge">A: ${cableData.connA || '—'}</span>
-            <span class="connector-badge">B: ${cableData.connB || '—'}</span>
+          <div class="spec-label">Connectors</div>
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.3rem;">
+            <span class="connector-badge">A: ${cable.connA}</span>
+            <span class="connector-badge">B: ${cable.connB}</span>
           </div>
         `;
         specsGrid.appendChild(connDiv);
 
-        // Frequency max
-        specsGrid.appendChild(addSpecItem('Max Freq', cableData.frequencyMax));
+        addSpec('Max Frequency', cable.frequencyMax);
         
-        // Status
-        const statusDiv = document.createElement('div');
-        statusDiv.className = 'spec-item';
-        statusDiv.innerHTML = `
-          <span class="spec-label">Status</span>
-          <span class="spec-value" style="color: ${cableData.status.toLowerCase().includes('pass') ? '#0f5c3b' : '#b34a1f'}; font-weight:650;">${cableData.status || '—'}</span>
-        `;
-        specsGrid.appendChild(statusDiv);
+        if (cable.vswr) addSpec('VSWR', cable.vswr);
+        if (cable.loss) addSpec('Insertion Loss', cable.loss);
 
-        // Full-width detail row for date & project
-        const detailDiv = document.createElement('div');
-        detailDiv.className = 'spec-item full-width';
-        detailDiv.innerHTML = `
-          <div style="display:flex; flex-wrap:wrap; justify-content: space-between; align-items: center;">
-            <span><span class="spec-label">Test Date</span> <span style="font-weight:600; margin-left:0.3rem;">${cableData.date || '—'}</span></span>
-            <span><span class="spec-label">Project</span> <span style="font-weight:600; margin-left:0.3rem;">${cableData.project || '—'}</span></span>
-          </div>
-        `;
-        specsGrid.appendChild(detailDiv);
+        // Footer
+        lastTested.textContent = `📅 Last tested: ${cable.date}`;
+        projectInfo.textContent = `📋 Project: ${cable.project}`;
       }
 
-      // ----- QR CODE GENERATION (linked to the same cable URL) -----
-      const qrContainer = document.getElementById('qrcode-container');
-      if (qrContainer && window.QRCode) {
-        // Clear any previous QR
-        qrContainer.innerHTML = '';
-        
-        // Use the full URL that points to this GitHub page with cable parameter
-        const qrText = fullCableUrl;
-        
-        // Generate QR code with customized options
-        new QRCode(qrContainer, {
-          text: qrText,
-          width: 90,
-          height: 90,
-          colorDark: "#0a2f44",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H
+      // ============================================
+      // Handle cable lookup
+      // ============================================
+      async function lookupCable(serialNumber) {
+        if (!serialNumber || serialNumber.trim() === '') {
+          alert('Please enter a serial number or scan a QR code');
+          return;
+        }
+
+        try {
+          // Show loading state
+          displayCableId.textContent = 'Loading...';
+          cableDashboard.classList.add('visible');
+          emptyState.style.display = 'none';
+          specsGrid.innerHTML = '<div class="spec-item" style="grid-column:1/-1;text-align:center;">⏳ Searching database...</div>';
+
+          const cable = await fetchCableData(serialNumber);
+          renderCableData(cable);
+          
+          // Update input field
+          serialInput.value = cable.id;
+          
+        } catch (error) {
+          alert(`❌ ${error.message}`);
+          // Reset to empty state
+          cableDashboard.classList.remove('visible');
+          emptyState.style.display = '';
+          serialInput.value = '';
+          console.error('Lookup error:', error);
+        }
+      }
+
+      // ============================================
+      // QR Scanner Setup
+      // ============================================
+      function startScanner() {
+        if (html5QrCode === null) {
+          html5QrCode = new Html5Qrcode("reader");
+        }
+
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        };
+
+        html5QrCode.start(
+          { facingMode: "environment" }, // Rear camera
+          config,
+          onScanSuccess,
+          onScanFailure
+        ).then(() => {
+          isScanning = true;
+          readerDiv.classList.add('active');
+          scanToggleBtn.classList.add('active');
+          scanToggleBtn.innerHTML = '⏹️ Stop Scanner';
+          scanHint.textContent = '📷 Scanning... Point camera at QR code on cable';
+        }).catch((err) => {
+          console.error('Scanner start error:', err);
+          alert('Cannot access camera. Please check permissions or use manual entry.');
+          stopScanner();
         });
+      }
 
-        // Also update the footer hint to show the full URL on hover (optional)
-        const urlHint = document.getElementById('dynamicUrlDisplay');
-        if (urlHint) {
-          urlHint.title = `Full link: ${qrText}`;
-        }
-      } else {
-        // Fallback if QR library fails to load
-        if (qrContainer) {
-          qrContainer.innerHTML = '<div style="padding:0.5rem; font-size:0.7rem; color:#555;">QR<br>🔳</div>';
+      function stopScanner() {
+        if (html5QrCode && isScanning) {
+          html5QrCode.stop().then(() => {
+            isScanning = false;
+            readerDiv.classList.remove('active');
+            scanToggleBtn.classList.remove('active');
+            scanToggleBtn.innerHTML = '📷 Scan QR Code';
+            scanHint.textContent = '💡 Point camera at the QR code on the cable label';
+          }).catch(err => console.error('Stop error:', err));
         }
       }
 
-      // Optional: If page is loaded with ?cable=XYZ, we could highlight or verify.
-      // For now it just displays the cable data as defined.
+      function onScanSuccess(decodedText) {
+        console.log('QR Scanned:', decodedText);
+        // Stop scanner after successful scan
+        stopScanner();
+        // Lookup the cable
+        lookupCable(decodedText);
+      }
+
+      function onScanFailure(error) {
+        // QR scan failures happen frequently (every frame without QR)
+        // We don't log them to avoid console spam
+      }
+
+      // ============================================
+      // Event Listeners
+      // ============================================
+      
+      // Search button
+      searchBtn.addEventListener('click', () => {
+        const serial = serialInput.value;
+        if (serial) {
+          lookupCable(serial);
+        }
+      });
+
+      // Enter key in input
+      serialInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const serial = serialInput.value;
+          if (serial) {
+            lookupCable(serial);
+          }
+        }
+      });
+
+      // Scan toggle button
+      scanToggleBtn.addEventListener('click', () => {
+        if (isScanning) {
+          stopScanner();
+        } else {
+          startScanner();
+        }
+      });
+
+      // Demo button
+      demoBtn.addEventListener('click', () => {
+        const demoSerials = Object.keys(cableDatabase);
+        const randomSerial = demoSerials[Math.floor(Math.random() * demoSerials.length)];
+        serialInput.value = randomSerial;
+        lookupCable(randomSerial);
+      });
+
+      // Clean up scanner when leaving page
+      window.addEventListener('beforeunload', () => {
+        if (isScanning) {
+          html5QrCode.stop().catch(() => {});
+        }
+      });
+
+      // ============================================
+      // URL Parameter Support (for direct linking)
+      // ============================================
       const urlParams = new URLSearchParams(window.location.search);
-      const cableParamFromUrl = urlParams.get('cable');
-      if (cableParamFromUrl && cableParamFromUrl !== displayId) {
-        // In a more dynamic setup you could fetch different cable data.
-        // We'll gently indicate that the URL parameter differs from hardcoded label.
-        console.log(`URL requests cable: ${cableParamFromUrl}, showing label for: ${displayId}`);
-        // For a simple static dashboard, we keep the predefined data.
-        // You could add a small note if needed.
+      const cableParam = urlParams.get('cable');
+      if (cableParam) {
+        serialInput.value = cableParam;
+        lookupCable(cableParam);
       }
 
-      // Set document title to reflect cable
-      document.title = `RF Cable ${displayId} | Label Dashboard`;
+      console.log('📡 RF Cable Scanner ready');
+      console.log('📋 Available cables:', Object.keys(cableDatabase).join(', '));
+      console.log('🔗 Backend simulation active - replace cableDatabase with API calls');
     })();
   </script>
 </body>
 </html>
-```
