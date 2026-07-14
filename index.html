@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>RF Cable Scanner | PS-SR# System</title>
+  <title>RF Cable Scanner | Dashboard</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,7 +19,7 @@
     }
 
     .app-container {
-      max-width: 750px;
+      max-width: 800px;
       width: 100%;
       display: flex;
       flex-direction: column;
@@ -27,6 +27,35 @@
       padding: 1rem;
     }
 
+    /* Dashboard Stats */
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .stat-card {
+      background: #1a1f2b;
+      border-radius: 1rem;
+      padding: 1.2rem;
+      border: 1px solid #2a3340;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f7b731;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6b7d90;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Header */
     .header {
       background: #1a1f2b;
       border-radius: 1.5rem;
@@ -47,7 +76,8 @@
       font-size: 0.8rem;
     }
 
-    .scanner-section {
+    /* Sections */
+    .section {
       background: #1a1f2b;
       border-radius: 1.5rem;
       padding: 1.3rem;
@@ -55,6 +85,16 @@
       border: 1px solid #2a3340;
     }
 
+    .section-title {
+      color: #f7b731;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Search */
     .search-box {
       display: flex;
       gap: 0.6rem;
@@ -128,7 +168,6 @@
       background: #f7b731;
       color: #0a0f14;
       font-weight: 700;
-      animation: pulse 2s infinite;
     }
 
     .btn-scan.scanning {
@@ -136,151 +175,93 @@
       color: white;
     }
 
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(247, 183, 49, 0.4); }
-      50% { box-shadow: 0 0 0 15px rgba(247, 183, 49, 0); }
-    }
-
-    .backend-status {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: rgba(39, 174, 96, 0.1);
-      border: 1px solid rgba(39, 174, 96, 0.3);
-      border-radius: 0.8rem;
-      margin-top: 0.8rem;
-      font-size: 0.8rem;
-    }
-
-    .backend-status.offline {
-      background: rgba(231, 76, 60, 0.1);
-      border-color: rgba(231, 76, 60, 0.3);
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #27ae60;
-      animation: dotPulse 2s infinite;
-    }
-
-    .status-dot.offline {
+    .btn-danger {
       background: #e74c3c;
+      color: white;
     }
 
-    @keyframes dotPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+    .btn-success {
+      background: #27ae60;
+      color: white;
     }
 
-    .scanner-wrapper {
-      position: relative;
-      width: 100%;
-      margin-top: 0.8rem;
-      display: none;
-      border-radius: 1rem;
-      overflow: hidden;
-      background: #000;
-      aspect-ratio: 4/3;
-      max-height: 400px;
+    /* Form */
+    .form-group {
+      margin-bottom: 0.8rem;
     }
 
-    .scanner-wrapper.active {
+    .form-label {
       display: block;
+      font-size: 0.8rem;
+      color: #6b7d90;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    #reader {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    #reader video {
-      object-fit: cover;
-    }
-
-    .scanner-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
+    .form-input, .form-select {
       width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 10;
+      padding: 0.7rem 1rem;
+      background: #0f1319;
+      border: 2px solid #2a3340;
+      border-radius: 0.8rem;
+      color: #e0e8f0;
+      font-size: 0.9rem;
+      outline: none;
     }
 
-    .overlay-bg {
-      position: absolute;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 11;
-    }
-
-    .target-frame {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 220px;
-      height: 220px;
-      border: 3px solid #f7b731;
-      border-radius: 15px;
-      box-shadow: 0 0 0 6px rgba(247, 183, 49, 0.2), 0 0 30px rgba(247, 183, 49, 0.3);
-      z-index: 12;
-      animation: frameGlow 2s ease-in-out infinite;
-    }
-
-    @keyframes frameGlow {
-      0%, 100% { border-color: rgba(247, 183, 49, 0.8); }
-      50% { border-color: rgba(247, 183, 49, 1); box-shadow: 0 0 0 8px rgba(247, 183, 49, 0.4), 0 0 50px rgba(247, 183, 49, 0.5); }
-    }
-
-    .corner {
-      position: absolute;
-      width: 25px;
-      height: 25px;
+    .form-input:focus, .form-select:focus {
       border-color: #f7b731;
-      border-style: solid;
-      z-index: 13;
     }
 
-    .corner-tl { top: calc(50% - 113px); left: calc(50% - 113px); border-width: 4px 0 0 4px; border-radius: 4px 0 0 0; }
-    .corner-tr { top: calc(50% - 113px); right: calc(50% - 113px); border-width: 4px 4px 0 0; border-radius: 0 4px 0 0; }
-    .corner-bl { bottom: calc(50% - 113px); left: calc(50% - 113px); border-width: 0 0 4px 4px; border-radius: 0 0 0 4px; }
-    .corner-br { bottom: calc(50% - 113px); right: calc(50% - 113px); border-width: 0 4px 4px 0; border-radius: 0 0 4px 0; }
-
-    .scan-line {
-      position: absolute;
-      left: calc(50% - 110px);
-      width: 220px;
-      height: 2px;
-      background: #f7b731;
-      box-shadow: 0 0 15px #f7b731;
-      z-index: 13;
-      animation: scanMove 2s linear infinite;
+    /* Cable Details */
+    .cable-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
     }
 
-    @keyframes scanMove {
-      0% { top: calc(50% - 110px); }
-      50% { top: calc(50% + 110px); }
-      100% { top: calc(50% - 110px); }
+    .detail-item {
+      background: #151a22;
+      border-radius: 0.8rem;
+      padding: 0.8rem;
+      border: 1px solid #2a3340;
     }
 
-    .scan-status-text {
-      position: absolute;
-      bottom: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 14;
-      background: rgba(0, 0, 0, 0.85);
-      padding: 0.5rem 1.5rem;
-      border-radius: 2rem;
+    .detail-label {
+      font-size: 0.7rem;
+      color: #6b7d90;
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+    }
+
+    .detail-value {
+      font-size: 1rem;
       font-weight: 600;
-      font-size: 0.85rem;
-      color: #f7b731;
-      border: 1px solid rgba(247, 183, 49, 0.3);
+      color: #e0e8f0;
     }
 
+    .detail-value.highlight {
+      color: #f7b731;
+    }
+
+    .test-report-link {
+      display: inline-block;
+      background: rgba(52, 152, 219, 0.2);
+      color: #3498db;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .test-report-link:hover {
+      background: rgba(52, 152, 219, 0.3);
+    }
+
+    /* Messages */
     .message {
       padding: 0.8rem 1rem;
       border-radius: 0.8rem;
@@ -296,172 +277,123 @@
     .message.success { background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; }
     .message.info { background: rgba(52, 152, 219, 0.15); border: 1px solid rgba(52, 152, 219, 0.3); color: #3498db; }
 
-    .cable-dashboard {
-      background: #1a1f2b;
-      border-radius: 1.8rem;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-      overflow: hidden;
-      border: 1px solid #2a3340;
+    /* Scanner */
+    .scanner-wrapper {
+      position: relative;
+      width: 100%;
+      margin-top: 0.8rem;
       display: none;
-    }
-
-    .cable-dashboard.visible {
-      display: block;
-      animation: slideUp 0.3s ease-out;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .dashboard-header {
-      background: linear-gradient(105deg, #f7b731 0%, #e6a820 100%);
-      padding: 1.5rem;
-      color: #0a0f14;
-    }
-
-    .ps-sr-display {
-      font-size: 0.8rem;
-      letter-spacing: 2px;
-      font-weight: 600;
-      color: #4a3a10;
-      margin-bottom: 0.3rem;
-    }
-
-    .cable-id-display {
-      font-size: 2rem;
-      font-weight: 700;
-    }
-
-    .specs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 0.8rem;
-      padding: 1.5rem;
-      background: #151a22;
-    }
-
-    .spec-item {
-      background: #1a1f2b;
       border-radius: 1rem;
-      padding: 1rem;
-      border: 1px solid #2a3340;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+      max-height: 400px;
     }
 
-    .spec-item.full-width {
-      grid-column: 1 / -1;
+    .scanner-wrapper.active { display: block; }
+
+    #reader { width: 100% !important; height: 100% !important; }
+
+    /* Recent Logs */
+    .log-list {
+      max-height: 300px;
+      overflow-y: auto;
     }
 
-    .spec-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 600;
-      color: #6b7d90;
-      margin-bottom: 0.3rem;
-    }
-
-    .spec-value {
-      font-size: 1.1rem;
-      font-weight: 650;
-      color: #e0e8f0;
-    }
-
-    .spec-value.highlight {
-      color: #f7b731;
-      font-size: 1.3rem;
-    }
-
-    .connector-badge {
-      display: inline-block;
-      background: #2a3340;
-      color: #f7b731;
-      padding: 0.3rem 0.8rem;
-      border-radius: 1.5rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin: 0.2rem;
-    }
-
-    .footer-note {
-      background: #11161d;
-      padding: 0.8rem 1.5rem;
+    .log-entry {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #2a3340;
       font-size: 0.8rem;
-      color: #6b7d90;
-      border-top: 1px solid #2a3340;
     }
 
-    .empty-state {
-      text-align: center;
-      padding: 2rem;
-      color: #6b7d90;
-      background: #1a1f2b;
-      border-radius: 1.8rem;
-      border: 1px solid #2a3340;
+    .log-entry:last-child {
+      border-bottom: none;
     }
 
-    .empty-state .icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+    .mate-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      font-size: 0.7rem;
+      font-weight: 600;
     }
+
+    .mate-badge.mated { background: rgba(39, 174, 96, 0.2); color: #27ae60; }
+    .mate-badge.demated { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
 
     @media (max-width: 500px) {
       .search-box { flex-direction: column; }
-      .specs-grid { grid-template-columns: 1fr 1fr; padding: 1rem; }
-      .target-frame { width: 180px; height: 180px; }
-      .cable-id-display { font-size: 1.5rem; }
+      .cable-details { grid-template-columns: 1fr; }
+      .dashboard-stats { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
+    <!-- Header -->
     <div class="header">
-      <h1>📡 RF Cable Scanner</h1>
-      <div class="subtitle">Scan QR Code or Type PS-SR# Manually</div>
+      <h1>📡 RF Cable Management System</h1>
+      <div class="subtitle">Scan QR Code or Search PS-SR#</div>
     </div>
 
-    <div class="scanner-section">
-      <div class="search-box">
-        <input 
-          type="text" 
-          id="psSrInput" 
-          class="serial-input" 
-          placeholder="Type PS-SR# (e.g., PS-RFCBL-1)"
-          autocomplete="off"
-          autofocus
-        >
-        <button class="btn btn-primary" id="searchBtn">🔍 Lookup</button>
+    <!-- Dashboard Stats -->
+    <div class="dashboard-stats" id="dashboardStats">
+      <div class="stat-card">
+        <div class="stat-value" id="totalInventory">--</div>
+        <div class="stat-label">Total Inventory</div>
       </div>
-      
-      <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-        <button class="btn btn-scan" id="scanToggleBtn">📷 Scan QR Code</button>
-        <button class="btn btn-outline" id="reloadBtn">🔄 Reload Data</button>
+      <div class="stat-card">
+        <div class="stat-value" id="inUse">--</div>
+        <div class="stat-label">In Use</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-value" id="available">--</div>
+        <div class="stat-label">Available</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="damaged">--</div>
+        <div class="stat-label">Damaged</div>
+      </div>
+    </div>
 
-      <div class="backend-status" id="backendStatus">
-        <span class="status-dot" id="backendDot"></span>
-        <span id="backendStatusText">Loading cables.csv...</span>
+    <!-- Search Section -->
+    <div class="section">
+      <div class="section-title">🔍 Search Cable</div>
+      <div class="search-box">
+        <input type="text" id="psSrInput" class="serial-input" placeholder="Type PS-SR# (e.g., PS-RFCBL-1)" autocomplete="off" autofocus>
+        <button class="btn btn-primary" id="searchBtn">🔍 Lookup</button>
+        <button class="btn btn-scan" id="scanToggleBtn">📷 Scan QR</button>
       </div>
 
       <div class="scanner-wrapper" id="scannerWrapper">
         <div id="reader"></div>
-        <div class="scanner-overlay">
-          <div class="overlay-bg" id="overlayTop" style="top:0;left:0;width:100%;"></div>
-          <div class="overlay-bg" id="overlayBottom" style="bottom:0;left:0;width:100%;"></div>
-          <div class="overlay-bg" id="overlayLeft" style="top:0;left:0;"></div>
-          <div class="overlay-bg" id="overlayRight" style="top:0;right:0;"></div>
-          <div class="target-frame"></div>
-          <div class="corner corner-tl"></div>
-          <div class="corner corner-tr"></div>
-          <div class="corner corner-bl"></div>
-          <div class="corner corner-br"></div>
-          <div class="scan-line"></div>
-          <div class="scan-status-text" id="scanStatusText">📷 Align QR code in frame</div>
+      </div>
+
+      <!-- Cable Details (shown after search) -->
+      <div id="cableDetails" style="display:none;">
+        <div class="cable-details" id="cableDetailsGrid"></div>
+        <a href="#" id="testReportLink" class="test-report-link" target="_blank" style="display:none;">
+          📄 View Test Report
+        </a>
+        <div id="mateCountDisplay" style="margin-top:0.5rem;color:#f7b731;"></div>
+      </div>
+
+      <!-- User Input Form (shown after search) -->
+      <div id="userForm" style="display:none; margin-top:1rem;">
+        <div class="section-title">📝 Log Usage</div>
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input type="text" id="userName" class="form-input" placeholder="Enter your name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Test Name (System/Sub-System) *</label>
+          <input type="text" id="testName" class="form-input" placeholder="e.g., System-A Test">
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn btn-success" id="mateBtn" style="flex:1;">🔌 Mate Connector</button>
+          <button class="btn btn-danger" id="demateBtn" style="flex:1;">🔌 De-mate Connector</button>
         </div>
       </div>
 
@@ -470,65 +402,72 @@
       <div class="message info" id="infoMsg"><span>ℹ️</span><span id="infoText"></span></div>
     </div>
 
-    <div class="cable-dashboard" id="cableDashboard">
-      <div class="dashboard-header">
-        <div class="ps-sr-display">PS-SR# <span id="psSrDisplay">---</span></div>
-        <div class="cable-id-display" id="cableSrDisplay">---</div>
+    <!-- Recent Activity -->
+    <div class="section">
+      <div class="section-title">📋 Recent Activity</div>
+      <div class="log-list" id="recentLogs">
+        <div style="color:#6b7d90; text-align:center;">Loading...</div>
       </div>
-      <div class="specs-grid" id="specsGrid"></div>
-      <div class="footer-note">
-        <span>📋 <span id="descriptionDisplay">---</span></span>
-        <span>🔢 Times Part No: <span id="partNoDisplay">---</span></span>
-      </div>
-    </div>
-
-    <div class="empty-state" id="emptyState">
-      <div class="icon">📡</div>
-      <h3>Type PS-SR# or Scan QR Code</h3>
-      <p>Cable details from cables.csv will appear here</p>
     </div>
   </div>
 
   <script>
     (function() {
       // ============================================
-      // CSV FILE PATH (same folder as index.html)
+      // CONFIGURATION
       // ============================================
-      const CSV_FILE_PATH = './cables.csv';
+      const API_BASE = '/api'; // Vercel serverless functions
+      
       // ============================================
-
+      // DOM ELEMENTS
+      // ============================================
       const els = {
+        // Stats
+        totalInventory: document.getElementById('totalInventory'),
+        inUse: document.getElementById('inUse'),
+        available: document.getElementById('available'),
+        damaged: document.getElementById('damaged'),
+        
+        // Search
         psSrInput: document.getElementById('psSrInput'),
         searchBtn: document.getElementById('searchBtn'),
         scanToggleBtn: document.getElementById('scanToggleBtn'),
-        reloadBtn: document.getElementById('reloadBtn'),
         scannerWrapper: document.getElementById('scannerWrapper'),
         readerDiv: document.getElementById('reader'),
-        scanStatusText: document.getElementById('scanStatusText'),
+        
+        // Cable details
+        cableDetails: document.getElementById('cableDetails'),
+        cableDetailsGrid: document.getElementById('cableDetailsGrid'),
+        testReportLink: document.getElementById('testReportLink'),
+        mateCountDisplay: document.getElementById('mateCountDisplay'),
+        
+        // Form
+        userForm: document.getElementById('userForm'),
+        userName: document.getElementById('userName'),
+        testName: document.getElementById('testName'),
+        mateBtn: document.getElementById('mateBtn'),
+        demateBtn: document.getElementById('demateBtn'),
+        
+        // Messages
         errorMsg: document.getElementById('errorMsg'),
         errorText: document.getElementById('errorText'),
         successMsg: document.getElementById('successMsg'),
         successText: document.getElementById('successText'),
         infoMsg: document.getElementById('infoMsg'),
         infoText: document.getElementById('infoText'),
-        cableDashboard: document.getElementById('cableDashboard'),
-        emptyState: document.getElementById('emptyState'),
-        psSrDisplay: document.getElementById('psSrDisplay'),
-        cableSrDisplay: document.getElementById('cableSrDisplay'),
-        specsGrid: document.getElementById('specsGrid'),
-        descriptionDisplay: document.getElementById('descriptionDisplay'),
-        partNoDisplay: document.getElementById('partNoDisplay'),
-        backendStatus: document.getElementById('backendStatus'),
-        backendDot: document.getElementById('backendDot'),
-        backendStatusText: document.getElementById('backendStatusText')
+        
+        // Recent logs
+        recentLogs: document.getElementById('recentLogs')
       };
 
       let html5QrCode = null;
       let isScanning = false;
       let cableDatabase = {};
+      let currentCable = null;
+      let currentMateCount = 0;
 
       // ============================================
-      // UI HELPERS
+      // HELPERS
       // ============================================
       function showMessage(type, text) {
         els.errorMsg.classList.remove('show');
@@ -545,336 +484,265 @@
           els.infoText.textContent = text;
           els.infoMsg.classList.add('show');
         }
-      }
-
-      function updateBackendStatus(online, text) {
-        if (online) {
-          els.backendStatus.classList.remove('offline');
-          els.backendDot.classList.remove('offline');
-        } else {
-          els.backendStatus.classList.add('offline');
-          els.backendDot.classList.add('offline');
-        }
-        els.backendStatusText.textContent = text;
+        
+        setTimeout(() => {
+          els.errorMsg.classList.remove('show');
+          els.successMsg.classList.remove('show');
+          els.infoMsg.classList.remove('show');
+        }, 5000);
       }
 
       // ============================================
-      // CSV PARSING
+      // LOAD DATA
       // ============================================
-      function parseCSV(csvText) {
-        console.log('📋 Parsing CSV...');
-        console.log('📋 First 300 chars:', csvText.substring(0, 300));
-        
-        // Split into lines and remove empty lines
-        const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-        console.log(`📋 Found ${lines.length} lines`);
-        
-        if (lines.length < 2) {
-          console.error('❌ CSV has less than 2 lines (need header + data)');
-          return {};
-        }
-        
-        // Parse header
-        const headerLine = lines[0];
-        const headers = headerLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').trim());
-        console.log('📋 Headers:', headers);
-        
-        const database = {};
-        
-        // Parse each data row
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i];
-          if (!line) continue;
-          
-          // Split by comma (handle quoted values)
-          const values = [];
-          let current = '';
-          let inQuotes = false;
-          
-          for (let j = 0; j < line.length; j++) {
-            const char = line[j];
-            if (char === '"') {
-              inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-              values.push(current.trim().replace(/^["']|["']$/g, ''));
-              current = '';
-            } else {
-              current += char;
-            }
-          }
-          values.push(current.trim().replace(/^["']|["']$/g, ''));
-          
-          console.log(`📋 Row ${i}: ${values.length} values`);
-          
-          // Map values to headers
-          const row = {};
-          headers.forEach((header, index) => {
-            row[header] = values[index] || '';
-          });
-          
-          // Find PS-SR# column
-          let psSr = '';
-          for (const key of Object.keys(row)) {
-            const cleanKey = key.toLowerCase().replace(/[\s\-_#]+/g, '');
-            if (cleanKey === 'pssr' || cleanKey === 'pssrno' || cleanKey.includes('pssr')) {
-              psSr = row[key];
-              break;
-            }
-          }
-          
-          // Fallback: use first column
-          if (!psSr && values.length > 0) {
-            psSr = values[0];
-          }
-          
-          if (psSr && psSr.trim()) {
-            const cleanPS = psSr.trim();
-            
-            // Helper to find fields by multiple possible names
-            const findField = (possibleNames) => {
-              for (const name of possibleNames) {
-                for (const key of Object.keys(row)) {
-                  const cleanKey = key.toLowerCase().replace(/[\s\-_#]+/g, '');
-                  if (cleanKey === name.toLowerCase().replace(/[\s\-_#]+/g, '')) {
-                    return row[key];
-                  }
-                }
-              }
-              return '';
-            };
-            
-            database[cleanPS] = {
-              psSr: cleanPS,
-              cableSr: findField(['cablesr', 'cablesr#', 'cable#', 'cableserial']),
-              description: findField(['description', 'desc']),
-              partNo: findField(['timespartno', 'timespartno.', 'partno', 'partnumber', 'timespart']),
-              length: findField(['length']),
-              connectorA: findField(['connector-a', 'connectora', 'connector a']),
-              connectorB: findField(['connector-b', 'connectorb', 'connector b']),
-              frequency: findField(['frequency', 'freq']),
-              status: findField(['status']),
-              location: findField(['location', 'project'])
-            };
-            
-            console.log(`✅ Added: ${cleanPS} ->`, database[cleanPS]);
-          }
-        }
-        
-        console.log(`📊 Total cables loaded: ${Object.keys(database).length}`);
-        console.log('📊 Keys:', Object.keys(database));
-        return database;
-      }
-
-      async function loadCSV() {
-        updateBackendStatus(false, 'Loading cables.csv...');
-        console.log('📥 Fetching:', CSV_FILE_PATH);
-        
+      async function loadInventory() {
         try {
-          const response = await fetch(CSV_FILE_PATH, {
-            cache: 'no-cache' // Don't cache to always get latest
-          });
-          
-          console.log('📡 Response status:', response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
+          const response = await fetch(`${API_BASE}/read-cables`);
+          if (!response.ok) throw new Error('Failed to load inventory');
           
           const csvText = await response.text();
-          console.log('📄 Received', csvText.length, 'characters');
+          const lines = csvText.split('\n').filter(l => l.trim());
           
-          const database = parseCSV(csvText);
+          if (lines.length < 2) return;
           
-          if (Object.keys(database).length === 0) {
-            throw new Error('No cables found in CSV. Check file format.');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+          
+          cableDatabase = {};
+          
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+            if (values.length < 2) continue;
+            
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+            
+            // Find PS-SR#
+            let psSr = '';
+            for (const key of Object.keys(row)) {
+              if (key.toLowerCase().replace(/[\s\-_#]+/g, '').includes('pssr')) {
+                psSr = row[key];
+                break;
+              }
+            }
+            if (!psSr) psSr = values[0];
+            
+            if (psSr && psSr.trim()) {
+              cableDatabase[psSr.trim()] = {
+                psSr: psSr.trim(),
+                cableSr: row['Cable SR#'] || row['cablesr#'] || '',
+                description: row['Description'] || row['description'] || '',
+                partNo: row['Times Part No.'] || row['timespartno'] || '',
+                length: row['Length'] || row['length'] || '',
+                connectorA: row['Connector - A'] || row['connector-a'] || '',
+                connectorB: row['Connector-B'] || row['connector-b'] || '',
+                testReportLink: row['Test_Report_Link'] || row['testreportlink'] || ''
+              };
+            }
           }
           
-          cableDatabase = database;
-          const count = Object.keys(database).length;
-          updateBackendStatus(true, `✅ Loaded ${count} cables from cables.csv`);
-          showMessage('success', `✅ Loaded ${count} cables successfully`);
-          console.log('✅ CSV load complete!');
+          console.log('✅ Loaded', Object.keys(cableDatabase).length, 'cables');
+        } catch (error) {
+          console.error('Load inventory error:', error);
+        }
+      }
+
+      async function loadStatsAndLogs() {
+        try {
+          const response = await fetch(`${API_BASE}/read-stats`);
+          if (!response.ok) throw new Error('Failed to load stats');
+          
+          const data = await response.json();
+          
+          // Update dashboard
+          if (data.stats) {
+            els.totalInventory.textContent = data.stats.totalInventory || 0;
+            els.inUse.textContent = data.stats.inUse || 0;
+            els.available.textContent = data.stats.available || 0;
+            els.damaged.textContent = data.stats.damaged || 0;
+          }
+          
+          // Update recent logs
+          if (data.recentLogs && data.recentLogs.length > 0) {
+            els.recentLogs.innerHTML = data.recentLogs.map(log => `
+              <div class="log-entry">
+                <div>
+                  <strong style="color:#f7b731;">${log.psSr}</strong>
+                  <span style="color:#6b7d90;"> by ${log.userName}</span>
+                  <br>
+                  <small style="color:#6b7d90;">${log.testName} | ${new Date(log.timestamp).toLocaleString()}</small>
+                </div>
+                <span class="mate-badge ${log.action}">${log.action.toUpperCase()}</span>
+              </div>
+            `).join('');
+          } else {
+            els.recentLogs.innerHTML = '<div style="color:#6b7d90; text-align:center;">No recent activity</div>';
+          }
           
         } catch (error) {
-          console.error('❌ CSV load failed:', error);
-          updateBackendStatus(false, '❌ Failed to load cables.csv');
-          showMessage('error', 'Cannot load cables.csv: ' + error.message);
-          cableDatabase = {};
+          console.error('Load stats error:', error);
         }
       }
 
       // ============================================
-      // SEARCH
+      // SEARCH & DISPLAY
       // ============================================
       function findCable(searchTerm) {
-        const term = searchTerm.trim();
-        console.log(`🔍 Searching for: "${term}"`);
-        console.log('📊 Available keys:', Object.keys(cableDatabase));
+        const term = searchTerm.trim().toUpperCase();
         
-        if (!term) return null;
+        // Exact match
+        if (cableDatabase[term]) return cableDatabase[term];
         
-        // 1. Exact match
-        if (cableDatabase[term]) {
-          console.log('✅ Exact match');
-          return cableDatabase[term];
+        // Case insensitive
+        for (const key of Object.keys(cableDatabase)) {
+          if (key.toUpperCase() === term) return cableDatabase[key];
         }
         
-        // 2. Case insensitive
-        const upperTerm = term.toUpperCase();
+        // Partial match
         for (const key of Object.keys(cableDatabase)) {
-          if (key.toUpperCase() === upperTerm) {
-            console.log('✅ Case-insensitive match:', key);
+          if (key.toUpperCase().includes(term) || term.includes(key.toUpperCase())) {
             return cableDatabase[key];
           }
         }
         
-        // 3. Partial match
-        const matches = Object.keys(cableDatabase).filter(k => 
-          k.toUpperCase().includes(upperTerm) || upperTerm.includes(k.toUpperCase())
-        );
-        
-        if (matches.length === 1) {
-          console.log('✅ Partial match:', matches[0]);
-          return cableDatabase[matches[0]];
-        } else if (matches.length > 1) {
-          throw new Error(`Multiple matches found: ${matches.slice(0, 3).join(', ')}...`);
-        }
-        
-        throw new Error(`"${term}" not found. Try: ${Object.keys(cableDatabase).slice(0, 5).join(', ')}...`);
+        return null;
       }
 
-      // ============================================
-      // RENDER CABLE
-      // ============================================
-      function renderCableData(cable) {
-        els.cableDashboard.classList.add('visible');
-        els.emptyState.style.display = 'none';
+      function displayCableDetails(cable) {
+        currentCable = cable;
         
-        els.psSrDisplay.textContent = cable.psSr || '—';
-        els.cableSrDisplay.textContent = cable.cableSr || '—';
-        els.descriptionDisplay.textContent = cable.description || '—';
-        els.partNoDisplay.textContent = cable.partNo || '—';
+        els.cableDetails.style.display = 'block';
+        els.userForm.style.display = 'block';
         
-        els.specsGrid.innerHTML = '';
-        
-        // Description
-        const descDiv = document.createElement('div');
-        descDiv.className = 'spec-item full-width';
-        descDiv.innerHTML = `
-          <div class="spec-label">Description</div>
-          <div class="spec-value highlight">${cable.description || '—'}</div>
-        `;
-        els.specsGrid.appendChild(descDiv);
-        
-        // Part No
-        const partDiv = document.createElement('div');
-        partDiv.className = 'spec-item';
-        partDiv.innerHTML = `
-          <div class="spec-label">Times Part No.</div>
-          <div class="spec-value">${cable.partNo || '—'}</div>
-        `;
-        els.specsGrid.appendChild(partDiv);
-        
-        // Length
-        const lenDiv = document.createElement('div');
-        lenDiv.className = 'spec-item';
-        lenDiv.innerHTML = `
-          <div class="spec-label">Length</div>
-          <div class="spec-value">${cable.length || '—'}</div>
-        `;
-        els.specsGrid.appendChild(lenDiv);
-        
-        // Connectors
-        const connDiv = document.createElement('div');
-        connDiv.className = 'spec-item full-width';
-        connDiv.innerHTML = `
-          <div class="spec-label">Connectors</div>
-          <div style="display:flex; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap;">
-            <span class="connector-badge">🔌 A: ${cable.connectorA || '—'}</span>
-            <span style="color:#6b7d90;">→</span>
-            <span class="connector-badge">🔌 B: ${cable.connectorB || '—'}</span>
+        els.cableDetailsGrid.innerHTML = `
+          <div class="detail-item">
+            <div class="detail-label">PS-SR#</div>
+            <div class="detail-value highlight">${cable.psSr}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Cable SR#</div>
+            <div class="detail-value">${cable.cableSr || '—'}</div>
+          </div>
+          <div class="detail-item" style="grid-column:1/-1;">
+            <div class="detail-label">Description</div>
+            <div class="detail-value">${cable.description || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Times Part No.</div>
+            <div class="detail-value">${cable.partNo || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Length</div>
+            <div class="detail-value">${cable.length || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Connector A</div>
+            <div class="detail-value">${cable.connectorA || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Connector B</div>
+            <div class="detail-value">${cable.connectorB || '—'}</div>
           </div>
         `;
-        els.specsGrid.appendChild(connDiv);
         
-        // Additional info
-        if (cable.frequency || cable.status || cable.location) {
-          const infoDiv = document.createElement('div');
-          infoDiv.className = 'spec-item full-width';
-          infoDiv.innerHTML = `
-            <div style="display:flex; flex-wrap:wrap; gap:1rem; font-size:0.85rem;">
-              ${cable.frequency ? `<span>📶 Freq: <strong>${cable.frequency}</strong></span>` : ''}
-              ${cable.status ? `<span>📊 Status: <strong>${cable.status}</strong></span>` : ''}
-              ${cable.location ? `<span>📍 Location: <strong>${cable.location}</strong></span>` : ''}
-            </div>
-          `;
-          els.specsGrid.appendChild(infoDiv);
+        // Test report link
+        if (cable.testReportLink) {
+          els.testReportLink.style.display = 'inline-block';
+          els.testReportLink.href = cable.testReportLink;
+        } else {
+          els.testReportLink.style.display = 'none';
         }
-        
-        els.psSrInput.value = cable.psSr || '';
-        showMessage('success', `✅ ${cable.psSr} found!`);
       }
 
-      async function lookupCable(searchTerm) {
+      async function searchCable(searchTerm) {
         if (!searchTerm?.trim()) {
-          showMessage('error', 'Please type a PS-SR# (e.g., PS-RFCBL-1)');
+          showMessage('error', 'Please type a PS-SR#');
           return;
         }
 
-        // Load CSV if not loaded yet
         if (Object.keys(cableDatabase).length === 0) {
-          showMessage('info', '📥 Loading cables.csv...');
-          await loadCSV();
-          if (Object.keys(cableDatabase).length === 0) {
-            return; // Error already shown
-          }
+          showMessage('info', 'Loading inventory...');
+          await loadInventory();
         }
 
-        try {
-          els.cableDashboard.classList.add('visible');
-          els.emptyState.style.display = 'none';
-          els.specsGrid.innerHTML = '<div class="spec-item full-width" style="text-align:center;color:#6b7d90;">⏳ Searching...</div>';
+        const cable = findCable(searchTerm);
+        
+        if (cable) {
+          displayCableDetails(cable);
+          showMessage('success', `✅ ${cable.psSr} found`);
+        } else {
+          els.cableDetails.style.display = 'none';
+          els.userForm.style.display = 'none';
+          showMessage('error', `"${searchTerm}" not found`);
+        }
+      }
 
-          const cable = findCable(searchTerm);
-          if (cable) {
-            renderCableData(cable);
+      // ============================================
+      // WRITE LOG (Mate/Demate)
+      // ============================================
+      async function logUsage(action) {
+        const userName = els.userName.value.trim();
+        const testName = els.testName.value.trim();
+        
+        if (!userName) {
+          showMessage('error', 'Please enter your name');
+          els.userName.focus();
+          return;
+        }
+        
+        if (!testName) {
+          showMessage('error', 'Please enter test name');
+          els.testName.focus();
+          return;
+        }
+        
+        if (!currentCable) {
+          showMessage('error', 'Please search for a cable first');
+          return;
+        }
+        
+        showMessage('info', 'Saving...');
+        
+        try {
+          const response = await fetch(`${API_BASE}/write-log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              psSr: currentCable.psSr,
+              userName: userName,
+              testName: testName,
+              action: action
+            })
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to save');
           }
+          
+          const result = await response.json();
+          
+          showMessage('success', `✅ ${action === 'mated' ? 'Mated' : 'De-mated'} logged! Count: ${result.entry.mateCountAfter}`);
+          
+          // Clear form
+          els.testName.value = '';
+          
+          // Refresh stats
+          await loadStatsAndLogs();
+          
         } catch (error) {
           showMessage('error', error.message);
-          els.cableDashboard.classList.remove('visible');
-          els.emptyState.style.display = '';
         }
       }
 
       // ============================================
       // QR SCANNER
       // ============================================
-      function updateOverlay() {
-        const readerEl = els.readerDiv;
-        if (!readerEl) return;
-        const h = readerEl.offsetHeight;
-        const w = readerEl.offsetWidth;
-        if (h === 0 || w === 0) { setTimeout(updateOverlay, 200); return; }
-        
-        const frameSize = Math.min(220, w * 0.6, h * 0.7);
-        const halfFrame = frameSize / 2;
-        const centerY = h / 2;
-        const centerX = w / 2;
-        
-        document.getElementById('overlayTop').style.height = (centerY - halfFrame) + 'px';
-        document.getElementById('overlayBottom').style.height = (centerY - halfFrame) + 'px';
-        document.getElementById('overlayLeft').style.width = (centerX - halfFrame) + 'px';
-        document.getElementById('overlayLeft').style.height = h + 'px';
-        document.getElementById('overlayRight').style.width = (centerX - halfFrame) + 'px';
-        document.getElementById('overlayRight').style.height = h + 'px';
-      }
-
       async function startScanner() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          showMessage('error', 'Camera access denied. Please allow camera permissions.');
+          showMessage('error', 'Camera access denied');
           return;
         }
 
@@ -889,31 +757,21 @@
         try {
           await html5QrCode.start(
             { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 220, height: 220 } },
+            { fps: 15, qrbox: { width: 250, height: 250 } },
             (decodedText) => {
-              console.log('✅ QR Scanned:', decodedText);
-              els.scanStatusText.textContent = '✅ Detected!';
-              els.scanStatusText.style.color = '#27ae60';
-              setTimeout(() => {
-                stopScanner();
-                els.psSrInput.value = decodedText.trim();
-                lookupCable(decodedText.trim());
-              }, 500);
+              stopScanner();
+              els.psSrInput.value = decodedText.trim();
+              searchCable(decodedText.trim());
             },
-            () => {
-              els.scanStatusText.textContent = 'Searching...';
-              els.scanStatusText.style.color = '#f7b731';
-            }
+            () => {} // Ignore scan failures
           );
           
           isScanning = true;
-          els.scanToggleBtn.textContent = '⏹️ Stop Scanner';
+          els.scanToggleBtn.textContent = '⏹️ Stop';
           els.scanToggleBtn.classList.add('scanning');
-          setTimeout(updateOverlay, 500);
-          window.addEventListener('resize', updateOverlay);
           
         } catch (err) {
-          showMessage('error', 'Camera error: ' + err.message);
+          showMessage('error', 'Camera error');
           stopScanner();
         }
       }
@@ -923,11 +781,8 @@
           html5QrCode.stop().catch(() => {}).finally(() => {
             isScanning = false;
             els.scannerWrapper.classList.remove('active');
-            els.scanToggleBtn.textContent = '📷 Scan QR Code';
+            els.scanToggleBtn.textContent = '📷 Scan QR';
             els.scanToggleBtn.classList.remove('scanning');
-            els.scanStatusText.textContent = '📷 Align QR code in frame';
-            els.scanStatusText.style.color = '#f7b731';
-            window.removeEventListener('resize', updateOverlay);
           });
         }
       }
@@ -935,43 +790,41 @@
       // ============================================
       // EVENT LISTENERS
       // ============================================
-      els.searchBtn.addEventListener('click', () => {
-        lookupCable(els.psSrInput.value);
-      });
+      els.searchBtn.addEventListener('click', () => searchCable(els.psSrInput.value));
       
       els.psSrInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          lookupCable(els.psSrInput.value);
-        }
+        if (e.key === 'Enter') searchCable(els.psSrInput.value);
       });
 
       els.scanToggleBtn.addEventListener('click', () => {
         isScanning ? stopScanner() : startScanner();
       });
 
-      els.reloadBtn.addEventListener('click', async () => {
-        cableDatabase = {};
-        els.cableDashboard.classList.remove('visible');
-        els.emptyState.style.display = '';
-        console.log('🔄 Reloading CSV...');
-        await loadCSV();
-      });
+      els.mateBtn.addEventListener('click', () => logUsage('mated'));
+      els.demateBtn.addEventListener('click', () => logUsage('demated'));
 
       // ============================================
       // INITIALIZATION
       // ============================================
-      console.log('📡 RF Cable Scanner Ready');
-      console.log('📁 CSV File:', CSV_FILE_PATH);
+      console.log('📡 RF Cable Management System Ready');
       
-      // Auto-load CSV on startup
-      loadCSV();
+      // Load everything on startup
+      Promise.all([
+        loadInventory(),
+        loadStatsAndLogs()
+      ]).then(() => {
+        console.log('✅ All data loaded');
+      });
       
-      // URL parameter support
+      // Auto-refresh stats every 30 seconds
+      setInterval(loadStatsAndLogs, 30000);
+      
+      // URL parameter
       const urlParams = new URLSearchParams(window.location.search);
       const psParam = urlParams.get('ps') || urlParams.get('cable');
       if (psParam) {
         els.psSrInput.value = psParam;
-        setTimeout(() => lookupCable(psParam), 1500);
+        setTimeout(() => searchCable(psParam), 1500);
       }
     })();
   </script>
