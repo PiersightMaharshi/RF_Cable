@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const REPO_OWNER = 'PiersightMaharshi'; // 🔴 Change this
     const REPO_NAME = 'RF_Cable'; // 🔴 Change this
-    const FILE_PATH = 'data/cables.csv';
+    const FILE_PATH = 'cables.csv';
     
     const response = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
