@@ -14,85 +14,91 @@
     }
 
     body {
-      background: #f0f2f5;
+      background: #0a0f14;
       font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
       min-height: 100vh;
-      padding: 1rem;
       display: flex;
       flex-direction: column;
       align-items: center;
+      color: #e0e8f0;
     }
 
     .app-container {
-      max-width: 700px;
+      max-width: 750px;
       width: 100%;
       display: flex;
       flex-direction: column;
       gap: 1.2rem;
+      padding: 1rem;
     }
 
-    /* Header / Scanner Section */
+    /* Scanner Section */
     .scanner-section {
-      background: white;
+      background: #1a1f2b;
       border-radius: 1.5rem;
-      padding: 1.5rem;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-      border: 1px solid #e0e8f0;
+      padding: 1.3rem;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      border: 1px solid #2a3340;
     }
 
     .app-title {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 1.2rem;
-      color: #0a2f44;
-      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      color: #f7b731;
+      font-size: 1.3rem;
       font-weight: 700;
     }
 
     .title-icon {
-      background: #0a2f44;
-      color: white;
+      background: #f7b731;
+      color: #0a0f14;
       border-radius: 0.8rem;
-      padding: 0.5rem;
-      font-size: 1.3rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 1.2rem;
     }
 
     .search-box {
       display: flex;
-      gap: 0.8rem;
+      gap: 0.6rem;
       margin-bottom: 1rem;
       flex-wrap: wrap;
     }
 
     .serial-input {
       flex: 1;
-      min-width: 200px;
-      padding: 0.85rem 1.2rem;
-      border: 2px solid #dce5ef;
+      min-width: 180px;
+      padding: 0.8rem 1.2rem;
+      border: 2px solid #2a3340;
       border-radius: 2.5rem;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 500;
       font-family: 'Courier New', monospace;
       letter-spacing: 0.5px;
-      background: #f8fafd;
+      background: #0f1319;
+      color: #e0e8f0;
       transition: all 0.2s;
       outline: none;
     }
 
     .serial-input:focus {
-      border-color: #0a2f44;
-      background: white;
-      box-shadow: 0 0 0 4px rgba(10,47,68,0.08);
+      border-color: #f7b731;
+      background: #151a22;
+      box-shadow: 0 0 0 4px rgba(247, 183, 49, 0.1);
+    }
+
+    .serial-input::placeholder {
+      color: #4a5568;
     }
 
     .btn {
-      padding: 0.85rem 1.5rem;
+      padding: 0.8rem 1.3rem;
       border-radius: 2.5rem;
       border: none;
       font-weight: 600;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
       gap: 0.4rem;
@@ -101,74 +107,281 @@
     }
 
     .btn-primary {
-      background: #0a2f44;
-      color: white;
+      background: #f7b731;
+      color: #0a0f14;
     }
 
     .btn-primary:hover {
-      background: #154a66;
+      background: #f0a800;
       transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: #e8f0f8;
-      color: #0a2f44;
+      background: #2a3340;
+      color: #e0e8f0;
     }
 
     .btn-secondary:hover {
-      background: #d2e2f2;
+      background: #3a4556;
     }
 
     .btn-scan {
       background: #f7b731;
-      color: #0a2f44;
+      color: #0a0f14;
       font-weight: 700;
+      font-size: 1rem;
+      padding: 0.9rem 1.6rem;
+      box-shadow: 0 4px 15px rgba(247, 183, 49, 0.3);
     }
 
     .btn-scan:hover {
       background: #f0a800;
+      box-shadow: 0 6px 20px rgba(247, 183, 49, 0.4);
+      transform: translateY(-2px);
     }
 
     .btn-scan.active {
       background: #e74c3c;
       color: white;
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
       animation: pulse 1.5s infinite;
     }
 
     @keyframes pulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
-      50% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); }
+      50% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+    }
+
+    /* Video Scanner Container with Targeting Guide */
+    .scanner-container {
+      position: relative;
+      width: 100%;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      background: #000;
+      margin-top: 0.8rem;
+      display: none;
+      aspect-ratio: 4/3;
+      max-height: 400px;
+    }
+
+    .scanner-container.active {
+      display: block;
     }
 
     #reader {
       width: 100%;
-      border-radius: 1rem;
-      overflow: hidden;
-      margin-top: 1rem;
-      border: 2px solid #dce5ef;
-      display: none;
+      height: 100%;
     }
 
-    #reader.active {
-      display: block;
+    /* Overlay targeting guide */
+    .targeting-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Dimmed background with transparent center */
+    .targeting-overlay::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        /* Top bar */
+        linear-gradient(to bottom, 
+          rgba(0,0,0,0.7) 0%, 
+          rgba(0,0,0,0.7) calc(50% - 110px),
+          transparent calc(50% - 110px),
+          transparent calc(50% + 110px),
+          rgba(0,0,0,0.7) calc(50% + 110px),
+          rgba(0,0,0,0.7) 100%
+        ),
+        /* Left and right bars */
+        linear-gradient(to right,
+          rgba(0,0,0,0.7) 0%,
+          rgba(0,0,0,0.7) calc(50% - 110px),
+          transparent calc(50% - 110px),
+          transparent calc(50% + 110px),
+          rgba(0,0,0,0.7) calc(50% + 110px),
+          rgba(0,0,0,0.7) 100%
+        );
+      mix-blend-mode: multiply;
+    }
+
+    /* Center target frame */
+    .target-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 220px;
+      border: 3px solid rgba(247, 183, 49, 0.8);
+      border-radius: 15px;
+      box-shadow: 
+        0 0 0 6px rgba(247, 183, 49, 0.2),
+        0 0 40px rgba(247, 183, 49, 0.3),
+        inset 0 0 40px rgba(247, 183, 49, 0.05);
+      animation: frameGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes frameGlow {
+      0%, 100% { 
+        border-color: rgba(247, 183, 49, 0.8);
+        box-shadow: 0 0 0 6px rgba(247, 183, 49, 0.2), 0 0 40px rgba(247, 183, 49, 0.3);
+      }
+      50% { 
+        border-color: rgba(247, 183, 49, 1);
+        box-shadow: 0 0 0 8px rgba(247, 183, 49, 0.3), 0 0 60px rgba(247, 183, 49, 0.5);
+      }
+    }
+
+    /* Corner brackets */
+    .corner-bracket {
+      position: absolute;
+      width: 25px;
+      height: 25px;
+      border-color: #f7b731;
+      border-style: solid;
+      z-index: 11;
+    }
+
+    .corner-tl {
+      top: calc(50% - 115px);
+      left: calc(50% - 115px);
+      border-width: 4px 0 0 4px;
+      border-radius: 4px 0 0 0;
+    }
+
+    .corner-tr {
+      top: calc(50% - 115px);
+      right: calc(50% - 115px);
+      border-width: 4px 4px 0 0;
+      border-radius: 0 4px 0 0;
+    }
+
+    .corner-bl {
+      bottom: calc(50% - 115px);
+      left: calc(50% - 115px);
+      border-width: 0 0 4px 4px;
+      border-radius: 0 0 0 4px;
+    }
+
+    .corner-br {
+      bottom: calc(50% - 115px);
+      right: calc(50% - 115px);
+      border-width: 0 4px 4px 0;
+      border-radius: 0 0 4px 0;
+    }
+
+    /* Center crosshair */
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 11;
+    }
+
+    .crosshair::before,
+    .crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(247, 183, 49, 0.6);
+    }
+
+    .crosshair::before {
+      width: 2px;
+      height: 20px;
+      left: -1px;
+      top: -10px;
+    }
+
+    .crosshair::after {
+      width: 20px;
+      height: 2px;
+      left: -10px;
+      top: -1px;
+    }
+
+    /* Scanning line animation */
+    .scan-line {
+      position: absolute;
+      left: calc(50% - 110px);
+      width: 220px;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(247, 183, 49, 0.8), 
+        rgba(247, 183, 49, 1), 
+        rgba(247, 183, 49, 0.8), 
+        transparent
+      );
+      box-shadow: 0 0 10px rgba(247, 183, 49, 0.8);
+      z-index: 11;
+      animation: scanLine 2s linear infinite;
+    }
+
+    @keyframes scanLine {
+      0% { top: calc(50% - 110px); }
+      50% { top: calc(50% + 110px); }
+      100% { top: calc(50% - 110px); }
+    }
+
+    /* Status indicator */
+    .scan-status {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 11;
+      background: rgba(0,0,0,0.8);
+      padding: 0.5rem 1.5rem;
+      border-radius: 2rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #f7b731;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f7b731;
+      animation: dotPulse 1.5s infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     .scan-hint {
       font-size: 0.8rem;
-      color: #5e6f7e;
+      color: #6b7d90;
       margin-top: 0.5rem;
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.4rem;
     }
 
     /* Cable Dashboard Card */
     .cable-dashboard {
-      background: #ffffff;
-      border-radius: 2rem;
-      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
+      background: #1a1f2b;
+      border-radius: 1.8rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
       overflow: hidden;
-      border: 1px solid rgba(0, 70, 120, 0.15);
+      border: 1px solid #2a3340;
       display: none;
     }
 
@@ -177,34 +390,33 @@
     }
 
     .dashboard-header {
-      background: linear-gradient(105deg, #0a2f44 0%, #1c4b6e 100%);
+      background: linear-gradient(105deg, #f7b731 0%, #e6a820 100%);
       padding: 1.5rem 1.8rem;
-      color: white;
+      color: #0a0f14;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      border-bottom: 3px solid #f7b731;
     }
 
     .cable-badge {
       font-size: 0.75rem;
       letter-spacing: 2px;
       text-transform: uppercase;
-      font-weight: 500;
-      color: #c7e0f5;
+      font-weight: 600;
+      color: #4a3a10;
     }
 
     .cable-id {
       font-size: 2rem;
       font-weight: 700;
-      color: white;
+      color: #0a0f14;
     }
 
     .status-badge {
-      background: #27ae60;
-      color: white;
+      background: #0a0f14;
+      color: #f7b731;
       padding: 0.3rem 1rem;
       border-radius: 2rem;
       font-size: 0.8rem;
@@ -213,26 +425,27 @@
 
     .status-badge.warning {
       background: #e67e22;
+      color: white;
     }
 
     .status-badge.error {
       background: #c0392b;
+      color: white;
     }
 
     .specs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      padding: 1.5rem 1.8rem;
-      background: #f9fcff;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.8rem;
+      padding: 1.5rem;
+      background: #151a22;
     }
 
     .spec-item {
-      background: #ffffff;
+      background: #1a1f2b;
       border-radius: 1rem;
       padding: 0.9rem 1rem;
-      box-shadow: 0 4px 12px rgba(0, 32, 64, 0.06);
-      border: 1px solid #e9f0f5;
+      border: 1px solid #2a3340;
     }
 
     .spec-label {
@@ -240,19 +453,19 @@
       text-transform: uppercase;
       letter-spacing: 0.8px;
       font-weight: 600;
-      color: #4a6275;
+      color: #6b7d90;
       margin-bottom: 0.2rem;
     }
 
     .spec-value {
       font-size: 1.15rem;
       font-weight: 650;
-      color: #0b2b3f;
+      color: #e0e8f0;
     }
 
     .connector-badge {
-      background: #e5eff9;
-      color: #0a3147;
+      background: #2a3340;
+      color: #f7b731;
       padding: 0.2rem 0.65rem;
       border-radius: 1.5rem;
       font-size: 0.85rem;
@@ -261,26 +474,45 @@
     }
 
     .footer-note {
-      background: #f0f4fa;
-      padding: 0.8rem 1.8rem;
+      background: #11161d;
+      padding: 0.8rem 1.5rem;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       font-size: 0.8rem;
-      color: #2c4b64;
-      border-top: 1px solid #d0ddea;
+      color: #6b7d90;
+      border-top: 1px solid #2a3340;
     }
 
     .empty-state {
       text-align: center;
       padding: 2.5rem;
-      color: #7f8c8d;
+      color: #6b7d90;
+      background: #1a1f2b;
+      border-radius: 1.8rem;
+      border: 1px solid #2a3340;
     }
 
     .empty-state .icon {
       font-size: 3rem;
       margin-bottom: 1rem;
+    }
+
+    /* Success animation */
+    .scan-success {
+      animation: successFlash 0.5s ease-out;
+    }
+
+    @keyframes successFlash {
+      0% { 
+        box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.8);
+        border-color: #27ae60;
+      }
+      100% { 
+        box-shadow: 0 0 0 20px rgba(39, 174, 96, 0);
+        border-color: #f7b731;
+      }
     }
 
     @media (max-width: 500px) {
@@ -293,6 +525,10 @@
       .specs-grid {
         grid-template-columns: 1fr 1fr;
         padding: 1rem;
+      }
+      .target-frame {
+        width: 180px;
+        height: 180px;
       }
     }
   </style>
@@ -311,7 +547,7 @@
           type="text" 
           id="serialInput" 
           class="serial-input" 
-          placeholder="Enter serial number (e.g., CBL-5G-0421)"
+          placeholder="Enter serial (e.g., CBL-5G-0421)"
           autocomplete="off"
         >
         <button class="btn btn-primary" id="searchBtn">
@@ -324,17 +560,36 @@
           📷 Scan QR Code
         </button>
         <button class="btn btn-secondary" id="demoBtn">
-          🎲 Load Demo Cable
+          🎲 Demo Cable
         </button>
       </div>
+
+      <!-- Scanner with targeting guide -->
+      <div class="scanner-container" id="scannerContainer">
+        <div id="reader"></div>
+        
+        <!-- Targeting overlay -->
+        <div class="targeting-overlay">
+          <div class="target-frame" id="targetFrame"></div>
+          <div class="corner-bracket corner-tl"></div>
+          <div class="corner-bracket corner-tr"></div>
+          <div class="corner-bracket corner-bl"></div>
+          <div class="corner-bracket corner-br"></div>
+          <div class="crosshair"></div>
+          <div class="scan-line"></div>
+          <div class="scan-status">
+            <span class="status-dot"></span>
+            <span id="scanStatusText">Align QR code in frame</span>
+          </div>
+        </div>
+      </div>
       
-      <div id="reader"></div>
       <div class="scan-hint" id="scanHint">
-        💡 Point camera at the QR code on the cable label
+        💡 Click "Scan QR Code" and position the QR code in the center frame
       </div>
     </div>
 
-    <!-- Cable Dashboard (hidden until data loaded) -->
+    <!-- Cable Dashboard -->
     <div class="cable-dashboard" id="cableDashboard">
       <div class="dashboard-header">
         <div>
@@ -346,28 +601,26 @@
         </div>
       </div>
 
-      <div class="specs-grid" id="specsGrid">
-        <!-- Dynamically populated -->
-      </div>
+      <div class="specs-grid" id="specsGrid"></div>
 
       <div class="footer-note">
-        <span id="lastTested">Last tested: ---</span>
-        <span id="projectInfo">Project: ---</span>
+        <span id="lastTested">📅 Last tested: ---</span>
+        <span id="projectInfo">📋 Project: ---</span>
       </div>
     </div>
 
     <!-- Empty state -->
     <div class="empty-state" id="emptyState">
-      <div class="icon">🔍</div>
+      <div class="icon">📡</div>
       <h3>Scan a QR code or enter a serial number</h3>
-      <p style="color: #95a5a6;">The cable details will appear here</p>
+      <p>The cable details will appear here</p>
     </div>
   </div>
 
   <script>
     (function() {
       // ============================================
-      // BACKEND SIMULATION - Replace with real API
+      // Cable Database (Backend Simulation)
       // ============================================
       const cableDatabase = {
         "CBL-5G-0421": {
@@ -443,7 +696,10 @@
       const searchBtn = document.getElementById('searchBtn');
       const scanToggleBtn = document.getElementById('scanToggleBtn');
       const demoBtn = document.getElementById('demoBtn');
+      const scannerContainer = document.getElementById('scannerContainer');
       const readerDiv = document.getElementById('reader');
+      const targetFrame = document.getElementById('targetFrame');
+      const scanStatusText = document.getElementById('scanStatusText');
       const scanHint = document.getElementById('scanHint');
       const cableDashboard = document.getElementById('cableDashboard');
       const emptyState = document.getElementById('emptyState');
@@ -457,44 +713,32 @@
       let isScanning = false;
 
       // ============================================
-      // Fetch cable data (simulated backend call)
+      // Fetch cable data
       // ============================================
       function fetchCableData(serialNumber) {
-        // Clean the serial number
         const cleanSerial = serialNumber.trim().toUpperCase();
         
-        // Simulate API call - Replace with actual fetch()
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             const cable = cableDatabase[cleanSerial];
             if (cable) {
               resolve(cable);
             } else {
-              reject(new Error(`Cable "${cleanSerial}" not found in database`));
+              reject(new Error(`Cable "${cleanSerial}" not found`));
             }
-          }, 300); // Simulate network delay
+          }, 300);
         });
-
-        // REAL BACKEND IMPLEMENTATION:
-        // return fetch(`https://your-api.com/cables/${encodeURIComponent(cleanSerial)}`)
-        //   .then(response => {
-        //     if (!response.ok) throw new Error('Cable not found');
-        //     return response.json();
-        //   });
       }
 
       // ============================================
-      // Render cable data to dashboard
+      // Render cable data
       // ============================================
       function renderCableData(cable) {
-        // Show dashboard, hide empty state
         cableDashboard.classList.add('visible');
         emptyState.style.display = 'none';
 
-        // Header
         displayCableId.textContent = cable.id;
 
-        // Status badge
         statusBadge.textContent = cable.status;
         statusBadge.className = 'status-badge';
         if (cable.status.toLowerCase().includes('damaged') || 
@@ -505,7 +749,6 @@
           statusBadge.classList.add('warning');
         }
 
-        // Specs grid
         specsGrid.innerHTML = '';
 
         function addSpec(label, value, unit = '') {
@@ -513,7 +756,7 @@
           div.className = 'spec-item';
           div.innerHTML = `
             <div class="spec-label">${label}</div>
-            <div class="spec-value">${value || '—'} ${unit ? `<small style="font-size:0.75rem;color:#5e6f7e;">${unit}</small>` : ''}</div>
+            <div class="spec-value">${value || '—'} ${unit ? `<small style="font-size:0.75rem;color:#6b7d90;">${unit}</small>` : ''}</div>
           `;
           specsGrid.appendChild(div);
         }
@@ -522,7 +765,6 @@
         addSpec('Length', cable.length, cable.lengthUnit);
         addSpec('Impedance', cable.impedance, cable.impedanceUnit);
         
-        // Connectors
         const connDiv = document.createElement('div');
         connDiv.className = 'spec-item';
         connDiv.innerHTML = `
@@ -535,11 +777,9 @@
         specsGrid.appendChild(connDiv);
 
         addSpec('Max Frequency', cable.frequencyMax);
-        
         if (cable.vswr) addSpec('VSWR', cable.vswr);
         if (cable.loss) addSpec('Insertion Loss', cable.loss);
 
-        // Footer
         lastTested.textContent = `📅 Last tested: ${cable.date}`;
         projectInfo.textContent = `📋 Project: ${cable.project}`;
       }
@@ -554,30 +794,25 @@
         }
 
         try {
-          // Show loading state
           displayCableId.textContent = 'Loading...';
           cableDashboard.classList.add('visible');
           emptyState.style.display = 'none';
-          specsGrid.innerHTML = '<div class="spec-item" style="grid-column:1/-1;text-align:center;">⏳ Searching database...</div>';
+          specsGrid.innerHTML = '<div class="spec-item" style="grid-column:1/-1;text-align:center;color:#6b7d90;">⏳ Searching database...</div>';
 
           const cable = await fetchCableData(serialNumber);
           renderCableData(cable);
-          
-          // Update input field
           serialInput.value = cable.id;
           
         } catch (error) {
           alert(`❌ ${error.message}`);
-          // Reset to empty state
           cableDashboard.classList.remove('visible');
           emptyState.style.display = '';
           serialInput.value = '';
-          console.error('Lookup error:', error);
         }
       }
 
       // ============================================
-      // QR Scanner Setup
+      // QR Scanner with visual feedback
       // ============================================
       function startScanner() {
         if (html5QrCode === null) {
@@ -586,24 +821,27 @@
 
         const config = {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0
+          qrbox: { width: 220, height: 220 },
+          aspectRatio: 1.0,
+          disableFlip: false
         };
 
         html5QrCode.start(
-          { facingMode: "environment" }, // Rear camera
+          { facingMode: "environment" },
           config,
           onScanSuccess,
           onScanFailure
         ).then(() => {
           isScanning = true;
-          readerDiv.classList.add('active');
+          scannerContainer.classList.add('active');
           scanToggleBtn.classList.add('active');
           scanToggleBtn.innerHTML = '⏹️ Stop Scanner';
-          scanHint.textContent = '📷 Scanning... Point camera at QR code on cable';
+          scanHint.innerHTML = '📷 <strong>Position QR code in the yellow frame</strong> - Hold steady for scan';
+          scanStatusText.textContent = 'Align QR code in frame';
+          scanStatusText.style.color = '#f7b731';
         }).catch((err) => {
-          console.error('Scanner start error:', err);
-          alert('Cannot access camera. Please check permissions or use manual entry.');
+          console.error('Scanner error:', err);
+          alert('Cannot access camera. Please check permissions.');
           stopScanner();
         });
       }
@@ -612,50 +850,57 @@
         if (html5QrCode && isScanning) {
           html5QrCode.stop().then(() => {
             isScanning = false;
-            readerDiv.classList.remove('active');
+            scannerContainer.classList.remove('active');
             scanToggleBtn.classList.remove('active');
             scanToggleBtn.innerHTML = '📷 Scan QR Code';
-            scanHint.textContent = '💡 Point camera at the QR code on the cable label';
+            scanHint.innerHTML = '💡 Click "Scan QR Code" and position the QR code in the center frame';
+            scanStatusText.textContent = 'Align QR code in frame';
+            targetFrame.classList.remove('scan-success');
           }).catch(err => console.error('Stop error:', err));
         }
       }
 
       function onScanSuccess(decodedText) {
-        console.log('QR Scanned:', decodedText);
-        // Stop scanner after successful scan
-        stopScanner();
-        // Lookup the cable
-        lookupCable(decodedText);
+        console.log('✅ QR Scanned:', decodedText);
+        
+        // Visual success feedback
+        targetFrame.classList.add('scan-success');
+        scanStatusText.textContent = '✅ QR Code Detected!';
+        scanStatusText.style.color = '#27ae60';
+        
+        // Stop scanner
+        setTimeout(() => {
+          stopScanner();
+          lookupCable(decodedText);
+        }, 800);
       }
 
       function onScanFailure(error) {
-        // QR scan failures happen frequently (every frame without QR)
-        // We don't log them to avoid console spam
+        // Update status text based on common errors
+        if (error.includes('No QR code found')) {
+          scanStatusText.textContent = 'Searching for QR code...';
+        } else if (error.includes('insufficient')) {
+          scanStatusText.textContent = 'Move closer to QR code';
+        } else {
+          scanStatusText.textContent = 'Align QR code in frame';
+        }
+        scanStatusText.style.color = '#f7b731';
       }
 
       // ============================================
       // Event Listeners
       // ============================================
-      
-      // Search button
       searchBtn.addEventListener('click', () => {
         const serial = serialInput.value;
-        if (serial) {
-          lookupCable(serial);
-        }
+        if (serial) lookupCable(serial);
       });
 
-      // Enter key in input
       serialInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          const serial = serialInput.value;
-          if (serial) {
-            lookupCable(serial);
-          }
+        if (e.key === 'Enter' && serialInput.value) {
+          lookupCable(serialInput.value);
         }
       });
 
-      // Scan toggle button
       scanToggleBtn.addEventListener('click', () => {
         if (isScanning) {
           stopScanner();
@@ -664,24 +909,20 @@
         }
       });
 
-      // Demo button
       demoBtn.addEventListener('click', () => {
-        const demoSerials = Object.keys(cableDatabase);
-        const randomSerial = demoSerials[Math.floor(Math.random() * demoSerials.length)];
-        serialInput.value = randomSerial;
-        lookupCable(randomSerial);
+        const demos = Object.keys(cableDatabase);
+        const random = demos[Math.floor(Math.random() * demos.length)];
+        serialInput.value = random;
+        lookupCable(random);
       });
 
-      // Clean up scanner when leaving page
       window.addEventListener('beforeunload', () => {
         if (isScanning) {
           html5QrCode.stop().catch(() => {});
         }
       });
 
-      // ============================================
-      // URL Parameter Support (for direct linking)
-      // ============================================
+      // URL parameter support
       const urlParams = new URLSearchParams(window.location.search);
       const cableParam = urlParams.get('cable');
       if (cableParam) {
@@ -689,9 +930,8 @@
         lookupCable(cableParam);
       }
 
-      console.log('📡 RF Cable Scanner ready');
+      console.log('📡 RF Cable Scanner ready with targeting guide');
       console.log('📋 Available cables:', Object.keys(cableDatabase).join(', '));
-      console.log('🔗 Backend simulation active - replace cableDatabase with API calls');
     })();
   </script>
 </body>
