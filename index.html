@@ -3,18 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>RF Cable Scanner | QR Dashboard</title>
+  <title>RF Cable Scanner | PS-SR# QR System</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     body {
       background: #0a0f14;
-      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -31,30 +27,32 @@
       padding: 1rem;
     }
 
+    .header {
+      background: #1a1f2b;
+      border-radius: 1.5rem;
+      padding: 1.3rem;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      border: 1px solid #2a3340;
+      text-align: center;
+    }
+
+    .header h1 {
+      color: #f7b731;
+      font-size: 1.5rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .header .subtitle {
+      color: #6b7d90;
+      font-size: 0.8rem;
+    }
+
     .scanner-section {
       background: #1a1f2b;
       border-radius: 1.5rem;
       padding: 1.3rem;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
       border: 1px solid #2a3340;
-    }
-
-    .app-title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      color: #f7b731;
-      font-size: 1.3rem;
-      font-weight: 700;
-    }
-
-    .title-icon {
-      background: #f7b731;
-      color: #0a0f14;
-      border-radius: 0.8rem;
-      padding: 0.4rem 0.6rem;
-      font-size: 1.2rem;
     }
 
     .search-box {
@@ -71,27 +69,27 @@
       border: 2px solid #2a3340;
       border-radius: 2.5rem;
       font-size: 0.95rem;
-      font-weight: 500;
+      font-weight: 600;
       font-family: 'Courier New', monospace;
       letter-spacing: 0.5px;
       background: #0f1319;
-      color: #e0e8f0;
-      transition: all 0.2s;
+      color: #f7b731;
       outline: none;
+      text-transform: uppercase;
     }
 
     .serial-input:focus {
       border-color: #f7b731;
-      background: #151a22;
       box-shadow: 0 0 0 4px rgba(247, 183, 49, 0.1);
     }
 
     .serial-input::placeholder {
       color: #4a5568;
+      text-transform: none;
     }
 
     .btn {
-      padding: 0.8rem 1.3rem;
+      padding: 0.8rem 1.5rem;
       border-radius: 2.5rem;
       border: none;
       font-weight: 600;
@@ -102,11 +100,14 @@
       gap: 0.4rem;
       transition: all 0.2s;
       white-space: nowrap;
+    }
+
+    .btn-primary {
       background: #f7b731;
       color: #0a0f14;
     }
 
-    .btn:hover {
+    .btn-primary:hover {
       background: #f0a800;
       transform: translateY(-1px);
     }
@@ -121,20 +122,18 @@
       background: rgba(247, 183, 49, 0.1);
     }
 
-    .btn-danger {
-      background: #e74c3c;
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #c0392b;
-    }
-
     .btn-scan {
       font-size: 1rem;
-      padding: 0.9rem 1.6rem;
-      box-shadow: 0 4px 15px rgba(247, 183, 49, 0.3);
+      padding: 0.9rem 1.8rem;
+      background: #f7b731;
+      color: #0a0f14;
+      font-weight: 700;
       animation: pulse 2s infinite;
+    }
+
+    .btn-scan.scanning {
+      background: #e74c3c;
+      color: white;
     }
 
     @keyframes pulse {
@@ -142,7 +141,40 @@
       50% { box-shadow: 0 0 0 15px rgba(247, 183, 49, 0); }
     }
 
-    /* Scanner Container */
+    .backend-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(39, 174, 96, 0.1);
+      border: 1px solid rgba(39, 174, 96, 0.3);
+      border-radius: 0.8rem;
+      margin-top: 0.8rem;
+      font-size: 0.8rem;
+    }
+
+    .backend-status.offline {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: rgba(231, 76, 60, 0.3);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #27ae60;
+      animation: dotPulse 2s infinite;
+    }
+
+    .status-dot.offline {
+      background: #e74c3c;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
     .scanner-wrapper {
       position: relative;
       width: 100%;
@@ -151,6 +183,8 @@
       border-radius: 1rem;
       overflow: hidden;
       background: #000;
+      aspect-ratio: 4/3;
+      max-height: 400px;
     }
 
     .scanner-wrapper.active {
@@ -159,27 +193,13 @@
 
     #reader {
       width: 100% !important;
-      border-radius: 1rem;
+      height: 100% !important;
     }
 
     #reader video {
-      border-radius: 1rem;
+      object-fit: cover;
     }
 
-    /* Hide default QR box border */
-    #reader__scan_region {
-      position: relative;
-    }
-
-    #reader__dashboard_section {
-      padding: 0 !important;
-    }
-
-    #reader__dashboard_section_csr span {
-      display: none;
-    }
-
-    /* Targeting Overlay */
     .scanner-overlay {
       position: absolute;
       top: 0;
@@ -192,30 +212,8 @@
 
     .overlay-bg {
       position: absolute;
-      background: rgba(0, 0, 0, 0.65);
+      background: rgba(0, 0, 0, 0.7);
       z-index: 11;
-    }
-
-    .overlay-top {
-      top: 0;
-      left: 0;
-      width: 100%;
-    }
-
-    .overlay-bottom {
-      bottom: 0;
-      left: 0;
-      width: 100%;
-    }
-
-    .overlay-left {
-      top: 0;
-      left: 0;
-    }
-
-    .overlay-right {
-      top: 0;
-      right: 0;
     }
 
     .target-frame {
@@ -223,8 +221,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 250px;
-      height: 250px;
+      width: 220px;
+      height: 220px;
       border: 3px solid #f7b731;
       border-radius: 15px;
       box-shadow: 0 0 0 6px rgba(247, 183, 49, 0.2), 0 0 30px rgba(247, 183, 49, 0.3);
@@ -234,116 +232,70 @@
 
     @keyframes frameGlow {
       0%, 100% { border-color: rgba(247, 183, 49, 0.8); }
-      50% { border-color: rgba(247, 183, 49, 1); }
+      50% { border-color: rgba(247, 183, 49, 1); box-shadow: 0 0 0 8px rgba(247, 183, 49, 0.4), 0 0 50px rgba(247, 183, 49, 0.5); }
     }
 
     .corner {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 25px;
+      height: 25px;
       border-color: #f7b731;
       border-style: solid;
       z-index: 13;
     }
 
-    .corner-tl { top: calc(50% - 128px); left: calc(50% - 128px); border-width: 4px 0 0 4px; border-radius: 4px 0 0 0; }
-    .corner-tr { top: calc(50% - 128px); right: calc(50% - 128px); border-width: 4px 4px 0 0; border-radius: 0 4px 0 0; }
-    .corner-bl { bottom: calc(50% - 128px); left: calc(50% - 128px); border-width: 0 0 4px 4px; border-radius: 0 0 0 4px; }
-    .corner-br { bottom: calc(50% - 128px); right: calc(50% - 128px); border-width: 0 4px 4px 0; border-radius: 0 0 4px 0; }
+    .corner-tl { top: calc(50% - 113px); left: calc(50% - 113px); border-width: 4px 0 0 4px; border-radius: 4px 0 0 0; }
+    .corner-tr { top: calc(50% - 113px); right: calc(50% - 113px); border-width: 4px 4px 0 0; border-radius: 0 4px 0 0; }
+    .corner-bl { bottom: calc(50% - 113px); left: calc(50% - 113px); border-width: 0 0 4px 4px; border-radius: 0 0 0 4px; }
+    .corner-br { bottom: calc(50% - 113px); right: calc(50% - 113px); border-width: 0 4px 4px 0; border-radius: 0 0 4px 0; }
 
     .scan-line {
       position: absolute;
-      left: calc(50% - 125px);
-      width: 250px;
+      left: calc(50% - 110px);
+      width: 220px;
       height: 2px;
       background: #f7b731;
-      box-shadow: 0 0 10px #f7b731;
+      box-shadow: 0 0 15px #f7b731;
       z-index: 13;
       animation: scanMove 2s linear infinite;
     }
 
     @keyframes scanMove {
-      0% { top: calc(50% - 125px); }
-      50% { top: calc(50% + 125px); }
-      100% { top: calc(50% - 125px); }
+      0% { top: calc(50% - 110px); }
+      50% { top: calc(50% + 110px); }
+      100% { top: calc(50% - 110px); }
     }
 
-    .scan-status-bar {
+    .scan-status-text {
       position: absolute;
-      bottom: 20px;
+      bottom: 15px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 14;
       background: rgba(0, 0, 0, 0.85);
-      padding: 0.6rem 1.5rem;
+      padding: 0.5rem 1.5rem;
       border-radius: 2rem;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #f7b731;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
       border: 1px solid rgba(247, 183, 49, 0.3);
     }
 
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #f7b731;
-      animation: dotPulse 1s infinite;
-    }
-
-    @keyframes dotPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    .scan-hint {
-      font-size: 0.85rem;
-      color: #f7b731;
-      margin-top: 0.8rem;
-      padding: 0.6rem 1rem;
-      border-radius: 0.8rem;
-      background: rgba(247, 183, 49, 0.1);
-      border: 1px solid rgba(247, 183, 49, 0.2);
-    }
-
-    .error-box {
-      background: rgba(231, 76, 60, 0.15);
-      border: 1px solid rgba(231, 76, 60, 0.3);
-      color: #e74c3c;
+    .message {
       padding: 0.8rem 1rem;
       border-radius: 0.8rem;
       margin-top: 0.8rem;
       display: none;
       font-size: 0.9rem;
-    }
-
-    .error-box.show {
-      display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .success-box {
-      background: rgba(39, 174, 96, 0.15);
-      border: 1px solid rgba(39, 174, 96, 0.3);
-      color: #27ae60;
-      padding: 0.8rem 1rem;
-      border-radius: 0.8rem;
-      margin-top: 0.8rem;
-      display: none;
-      font-size: 0.9rem;
-    }
+    .message.show { display: flex; }
+    .message.error { background: rgba(231, 76, 60, 0.15); border: 1px solid rgba(231, 76, 60, 0.3); color: #e74c3c; }
+    .message.success { background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; }
+    .message.info { background: rgba(52, 152, 219, 0.15); border: 1px solid rgba(52, 152, 219, 0.3); color: #3498db; }
 
-    .success-box.show {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    /* Cable Dashboard */
     .cable-dashboard {
       background: #1a1f2b;
       border-radius: 1.8rem;
@@ -355,47 +307,36 @@
 
     .cable-dashboard.visible {
       display: block;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .dashboard-header {
       background: linear-gradient(105deg, #f7b731 0%, #e6a820 100%);
-      padding: 1.5rem 1.8rem;
+      padding: 1.5rem;
       color: #0a0f14;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
     }
 
-    .cable-badge {
-      font-size: 0.75rem;
+    .ps-sr-display {
+      font-size: 0.8rem;
       letter-spacing: 2px;
-      text-transform: uppercase;
       font-weight: 600;
       color: #4a3a10;
+      margin-bottom: 0.3rem;
     }
 
-    .cable-id {
+    .cable-id-display {
       font-size: 2rem;
       font-weight: 700;
     }
 
-    .status-badge {
-      padding: 0.3rem 1rem;
-      border-radius: 2rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      background: #0a0f14;
-      color: #f7b731;
-    }
-
-    .status-badge.warning { background: #e67e22; color: white; }
-    .status-badge.error { background: #c0392b; color: white; }
-
     .specs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 0.8rem;
       padding: 1.5rem;
       background: #151a22;
@@ -404,8 +345,12 @@
     .spec-item {
       background: #1a1f2b;
       border-radius: 1rem;
-      padding: 0.9rem 1rem;
+      padding: 1rem;
       border: 1px solid #2a3340;
+    }
+
+    .spec-item.full-width {
+      grid-column: 1 / -1;
     }
 
     .spec-label {
@@ -414,23 +359,29 @@
       letter-spacing: 0.8px;
       font-weight: 600;
       color: #6b7d90;
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.3rem;
     }
 
     .spec-value {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 650;
       color: #e0e8f0;
     }
 
+    .spec-value.highlight {
+      color: #f7b731;
+      font-size: 1.3rem;
+    }
+
     .connector-badge {
+      display: inline-block;
       background: #2a3340;
       color: #f7b731;
-      padding: 0.2rem 0.65rem;
+      padding: 0.3rem 0.8rem;
       border-radius: 1.5rem;
       font-size: 0.85rem;
       font-weight: 600;
-      display: inline-block;
+      margin: 0.2rem;
     }
 
     .footer-note {
@@ -447,7 +398,7 @@
 
     .empty-state {
       text-align: center;
-      padding: 2.5rem;
+      padding: 2rem;
       color: #6b7d90;
       background: #1a1f2b;
       border-radius: 1.8rem;
@@ -461,98 +412,88 @@
 
     @media (max-width: 500px) {
       .search-box { flex-direction: column; }
-      .btn { justify-content: center; }
       .specs-grid { grid-template-columns: 1fr 1fr; padding: 1rem; }
-      .target-frame { width: 200px; height: 200px; }
+      .target-frame { width: 180px; height: 180px; }
+      .cable-id-display { font-size: 1.5rem; }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>📡 RF Cable Scanner</h1>
+      <div class="subtitle">Scan PS-SR# QR Code to View Cable Details</div>
+    </div>
+
+    <!-- Scanner Section -->
     <div class="scanner-section">
-      <div class="app-title">
-        <span class="title-icon">📡</span>
-        RF Cable Scanner
-      </div>
-      
       <div class="search-box">
         <input 
           type="text" 
-          id="serialInput" 
+          id="psSrInput" 
           class="serial-input" 
-          placeholder="Enter serial (e.g., CBL-5G-0421)"
+          placeholder="Enter PS-SR# (e.g., PS-001)"
           autocomplete="off"
+          autofocus
         >
-        <button class="btn" id="searchBtn">🔍 Search</button>
+        <button class="btn btn-primary" id="searchBtn">🔍 Lookup</button>
       </div>
       
       <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
         <button class="btn btn-scan" id="scanToggleBtn">📷 Scan QR Code</button>
-        <button class="btn btn-outline" id="demoBtn">🎲 Demo</button>
+        <button class="btn btn-outline" id="demoBtn">🎲 Load Demo</button>
       </div>
 
+      <!-- Backend Status -->
+      <div class="backend-status" id="backendStatus">
+        <span class="status-dot" id="backendDot"></span>
+        <span id="backendStatusText">Backend: OneDrive Excel</span>
+      </div>
+
+      <!-- Scanner -->
       <div class="scanner-wrapper" id="scannerWrapper">
         <div id="reader"></div>
-        
-        <div class="scanner-overlay" id="scannerOverlay">
-          <div class="overlay-bg overlay-top" id="overlayTop"></div>
-          <div class="overlay-bg overlay-bottom" id="overlayBottom"></div>
-          <div class="overlay-bg overlay-left" id="overlayLeft"></div>
-          <div class="overlay-bg overlay-right" id="overlayRight"></div>
-          
-          <div class="target-frame" id="targetFrame"></div>
-          
+        <div class="scanner-overlay">
+          <div class="overlay-bg" id="overlayTop" style="top:0;left:0;width:100%;"></div>
+          <div class="overlay-bg" id="overlayBottom" style="bottom:0;left:0;width:100%;"></div>
+          <div class="overlay-bg" id="overlayLeft" style="top:0;left:0;"></div>
+          <div class="overlay-bg" id="overlayRight" style="top:0;right:0;"></div>
+          <div class="target-frame"></div>
           <div class="corner corner-tl"></div>
           <div class="corner corner-tr"></div>
           <div class="corner corner-bl"></div>
           <div class="corner corner-br"></div>
-          
-          <div class="scan-line" id="scanLine"></div>
-          
-          <div class="scan-status-bar">
-            <span class="status-dot"></span>
-            <span id="scanStatusText">Position QR code in frame</span>
-          </div>
+          <div class="scan-line"></div>
+          <div class="scan-status-text" id="scanStatusText">📷 Align QR code in frame</div>
         </div>
       </div>
-      
-      <div class="scan-hint" id="scanHint">
-        💡 <strong>Tip:</strong> Hold steady, ensure good lighting, fill the frame with QR code
-      </div>
-      
-      <div class="error-box" id="errorBox">
-        <span>⚠️</span>
-        <span id="errorText"></span>
-      </div>
-      
-      <div class="success-box" id="successBox">
-        <span>✅</span>
-        <span id="successText"></span>
-      </div>
+
+      <!-- Messages -->
+      <div class="message error" id="errorMsg"><span>⚠️</span><span id="errorText"></span></div>
+      <div class="message success" id="successMsg"><span>✅</span><span id="successText"></span></div>
+      <div class="message info" id="infoMsg"><span>ℹ️</span><span id="infoText"></span></div>
     </div>
 
+    <!-- Cable Dashboard -->
     <div class="cable-dashboard" id="cableDashboard">
       <div class="dashboard-header">
-        <div>
-          <div class="cable-badge">RF Cable Assembly</div>
-          <div class="cable-id" id="displayCableId">---</div>
-        </div>
-        <div>
-          <span class="status-badge" id="statusBadge">Active</span>
-        </div>
+        <div class="ps-sr-display">PS-SR# <span id="psSrDisplay">---</span></div>
+        <div class="cable-id-display" id="cableSrDisplay">---</div>
       </div>
 
       <div class="specs-grid" id="specsGrid"></div>
 
       <div class="footer-note">
-        <span id="lastTested">📅 Last tested: ---</span>
-        <span id="projectInfo">📋 Project: ---</span>
+        <span>📋 <span id="descriptionDisplay">---</span></span>
+        <span>🔢 Times Part No: <span id="partNoDisplay">---</span></span>
       </div>
     </div>
 
+    <!-- Empty State -->
     <div class="empty-state" id="emptyState">
       <div class="icon">📡</div>
-      <h3>Scan a QR code or enter serial number</h3>
+      <h3>Scan PS-SR# QR Code or Enter Manually</h3>
       <p>Cable details will appear here</p>
     </div>
   </div>
@@ -560,402 +501,459 @@
   <script>
     (function() {
       // ============================================
-      // DATABASE
+      // 🔴 PUT YOUR ONEDRIVE EXCEL LINK HERE 🔴
       // ============================================
-      const cableDatabase = {
-        "CBL-5G-0421": {
-          id: "CBL-5G-0421",
-          type: "LMR-400-UF",
-          length: "12.5", lengthUnit: "ft",
-          impedance: "50", impedanceUnit: "Ω",
-          connA: "N-Type (M)", connB: "SMA (M)",
-          frequencyMax: "6 GHz",
-          status: "Tested • Pass",
-          date: "2026-03-15",
-          project: "Tower-A Sector 3",
-          vswr: "1.15:1", loss: "0.85 dB"
+      const ONEDRIVE_EXCEL_LINK = 'https://piersightspace-my.sharepoint.com/:x:/g/personal/maharshi_oza_piersight_space/IQDeI7aYj6qxTrU1xdaW4MdzAT0FQZCnBVG0y5F267YxoN8?e=JbPq2b';
+      // ============================================
+      // Replace the link above with your OneDrive share link
+      // Example: https://1drv.ms/x/s!AqL2xN9mKpZkgcQ
+      // ============================================
+
+      // Local fallback database (used if Excel fails to load)
+      const localDatabase = {
+        "PS-001": {
+          psSr: "PS-001",
+          cableSr: "CBL-5G-0421",
+          description: "LMR-400-UF Cable Assembly",
+          partNo: "TP-400-UF",
+          length: "12.5 ft",
+          connectorA: "N-Type (M)",
+          connectorB: "SMA (M)",
+          frequency: "6 GHz",
+          status: "Active",
+          location: "Tower-A Sector 3"
         },
-        "CBL-LMR-0192": {
-          id: "CBL-LMR-0192",
-          type: "LMR-240",
-          length: "8.2", lengthUnit: "ft",
-          impedance: "50", impedanceUnit: "Ω",
-          connA: "BNC (M)", connB: "BNC (M)",
-          frequencyMax: "3 GHz",
-          status: "Tested • Pass",
-          date: "2026-06-28",
-          project: "Lab Bench 4",
-          vswr: "1.08:1", loss: "0.45 dB"
-        },
-        "CBL-RG58-7734": {
-          id: "CBL-RG58-7734",
-          type: "RG-58",
-          length: "25.0", lengthUnit: "ft",
-          impedance: "50", impedanceUnit: "Ω",
-          connA: "SMA (M)", connB: "SMA (M)",
-          frequencyMax: "1 GHz",
-          status: "Needs Retest",
-          date: "2025-11-02",
-          project: "Field Kit B",
-          vswr: "1.42:1", loss: "2.1 dB"
+        "PS-002": {
+          psSr: "PS-002",
+          cableSr: "CBL-LMR-0192",
+          description: "LMR-240 Test Cable",
+          partNo: "TP-240",
+          length: "8.2 ft",
+          connectorA: "BNC (M)",
+          connectorB: "BNC (M)",
+          frequency: "3 GHz",
+          status: "Active",
+          location: "Lab Bench 4"
         }
       };
 
       // ============================================
       // DOM ELEMENTS
       // ============================================
-      const serialInput = document.getElementById('serialInput');
-      const searchBtn = document.getElementById('searchBtn');
-      const scanToggleBtn = document.getElementById('scanToggleBtn');
-      const demoBtn = document.getElementById('demoBtn');
-      const scannerWrapper = document.getElementById('scannerWrapper');
-      const readerDiv = document.getElementById('reader');
-      const scannerOverlay = document.getElementById('scannerOverlay');
-      const scanStatusText = document.getElementById('scanStatusText');
-      const scanHint = document.getElementById('scanHint');
-      const errorBox = document.getElementById('errorBox');
-      const errorText = document.getElementById('errorText');
-      const successBox = document.getElementById('successBox');
-      const successText = document.getElementById('successText');
-      const cableDashboard = document.getElementById('cableDashboard');
-      const emptyState = document.getElementById('emptyState');
-      const displayCableId = document.getElementById('displayCableId');
-      const statusBadge = document.getElementById('statusBadge');
-      const specsGrid = document.getElementById('specsGrid');
-      const lastTested = document.getElementById('lastTested');
-      const projectInfo = document.getElementById('projectInfo');
+      const els = {
+        psSrInput: document.getElementById('psSrInput'),
+        searchBtn: document.getElementById('searchBtn'),
+        scanToggleBtn: document.getElementById('scanToggleBtn'),
+        demoBtn: document.getElementById('demoBtn'),
+        scannerWrapper: document.getElementById('scannerWrapper'),
+        readerDiv: document.getElementById('reader'),
+        scanStatusText: document.getElementById('scanStatusText'),
+        errorMsg: document.getElementById('errorMsg'),
+        errorText: document.getElementById('errorText'),
+        successMsg: document.getElementById('successMsg'),
+        successText: document.getElementById('successText'),
+        infoMsg: document.getElementById('infoMsg'),
+        infoText: document.getElementById('infoText'),
+        cableDashboard: document.getElementById('cableDashboard'),
+        emptyState: document.getElementById('emptyState'),
+        psSrDisplay: document.getElementById('psSrDisplay'),
+        cableSrDisplay: document.getElementById('cableSrDisplay'),
+        specsGrid: document.getElementById('specsGrid'),
+        descriptionDisplay: document.getElementById('descriptionDisplay'),
+        partNoDisplay: document.getElementById('partNoDisplay'),
+        backendStatus: document.getElementById('backendStatus'),
+        backendDot: document.getElementById('backendDot'),
+        backendStatusText: document.getElementById('backendStatusText')
+      };
 
       let html5QrCode = null;
       let isScanning = false;
-      let scanAttempts = 0;
+      let cachedDatabase = null;
 
       // ============================================
-      // FUNCTIONS
+      // UI HELPERS
       // ============================================
-      function showError(msg) {
-        errorText.textContent = msg;
-        errorBox.classList.add('show');
-        successBox.classList.remove('show');
-      }
-
-      function showSuccess(msg) {
-        successText.textContent = msg;
-        successBox.classList.add('show');
-        errorBox.classList.remove('show');
-      }
-
-      function hideMessages() {
-        errorBox.classList.remove('show');
-        successBox.classList.remove('show');
-      }
-
-      function updateOverlay() {
-        const readerEl = readerDiv;
-        if (!readerEl) return;
+      function showMessage(type, text) {
+        els.errorMsg.classList.remove('show');
+        els.successMsg.classList.remove('show');
+        els.infoMsg.classList.remove('show');
         
-        const h = readerEl.offsetHeight;
-        const w = readerEl.offsetWidth;
+        if (type === 'error') {
+          els.errorText.textContent = text;
+          els.errorMsg.classList.add('show');
+        } else if (type === 'success') {
+          els.successText.textContent = text;
+          els.successMsg.classList.add('show');
+        } else if (type === 'info') {
+          els.infoText.textContent = text;
+          els.infoMsg.classList.add('show');
+        }
         
-        if (h === 0 || w === 0) {
-          setTimeout(updateOverlay, 200);
+        setTimeout(() => {
+          els.errorMsg.classList.remove('show');
+          els.successMsg.classList.remove('show');
+          els.infoMsg.classList.remove('show');
+        }, 5000);
+      }
+
+      function updateBackendStatus(online, text) {
+        if (online) {
+          els.backendStatus.classList.remove('offline');
+          els.backendDot.classList.remove('offline');
+          els.backendStatusText.textContent = text || 'Backend: OneDrive Excel Connected';
+        } else {
+          els.backendStatus.classList.add('offline');
+          els.backendDot.classList.add('offline');
+          els.backendStatusText.textContent = text || 'Backend: Using Local Database';
+        }
+      }
+
+      // ============================================
+      // EXCEL DATA FETCHING
+      // ============================================
+      function parseCSVToDatabase(csvText) {
+        const lines = csvText.split('\n').filter(line => line.trim());
+        if (lines.length < 2) return null;
+        
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+        console.log('📋 Excel Headers found:', headers);
+        
+        const database = {};
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+          if (values.length < 2) continue;
+          
+          const row = {};
+          headers.forEach((header, index) => {
+            row[header.toLowerCase().replace(/\s+/g, '')] = values[index] || '';
+          });
+          
+          // Find PS-SR# column
+          const psSr = row['ps-sr#'] || row['ps-sr'] || row['pssr#'] || row['pssr'] || '';
+          if (psSr) {
+            database[psSr.toUpperCase()] = {
+              psSr: psSr,
+              cableSr: row['cablesr#'] || row['cablesr'] || row['cable#'] || '',
+              description: row['description'] || '',
+              partNo: row['timespartno.'] || row['timespartno'] || row['partno'] || '',
+              length: row['length'] || '',
+              connectorA: row['connector-a'] || row['connectora'] || '',
+              connectorB: row['connector-b'] || row['connectorb'] || '',
+              frequency: row['frequency'] || row['freq'] || '',
+              status: row['status'] || 'Active',
+              location: row['location'] || ''
+            };
+          }
+        }
+        
+        console.log('✅ Loaded', Object.keys(database).length, 'cables from Excel');
+        return database;
+      }
+
+      async function fetchFromOneDrive(shareUrl) {
+        // Convert OneDrive share link to direct download
+        let downloadUrl = shareUrl;
+        
+        // Handle 1drv.ms short links
+        if (downloadUrl.includes('1drv.ms')) {
+          downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'download=1';
+        }
+        
+        console.log('📥 Fetching Excel from:', downloadUrl);
+        
+        const response = await fetch(downloadUrl, { 
+          redirect: 'follow',
+          headers: { 'Accept': 'text/csv, application/vnd.ms-excel, application/octet-stream' }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Cannot access Excel file (HTTP ${response.status})`);
+        }
+        
+        const csvText = await response.text();
+        
+        // Check if it's actually CSV or HTML (OneDrive sometimes returns HTML)
+        if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
+          throw new Error('OneDrive returned a webpage instead of Excel data. Make sure the link is shared as "Anyone with the link can view"');
+        }
+        
+        const database = parseCSVToDatabase(csvText);
+        if (!database || Object.keys(database).length === 0) {
+          throw new Error('No valid data found in Excel file. Check column headers.');
+        }
+        
+        return database;
+      }
+
+      async function loadDatabase() {
+        if (cachedDatabase) return cachedDatabase;
+        
+        try {
+          showMessage('info', '📥 Loading data from OneDrive Excel...');
+          cachedDatabase = await fetchFromOneDrive(ONEDRIVE_EXCEL_LINK);
+          updateBackendStatus(true, 'OneDrive Excel Connected (' + Object.keys(cachedDatabase).length + ' cables)');
+          showMessage('success', '✅ Excel data loaded successfully');
+          return cachedDatabase;
+        } catch (error) {
+          console.error('❌ Excel load error:', error);
+          updateBackendStatus(false, 'Using Local Database (Excel unavailable)');
+          showMessage('error', '⚠️ Cannot load Excel: ' + error.message + '. Using local database instead.');
+          cachedDatabase = localDatabase;
+          return localDatabase;
+        }
+      }
+
+      async function getCableData(psSrNumber) {
+        const cleanPS = psSrNumber.trim().toUpperCase();
+        const database = await loadDatabase();
+        
+        const cable = database[cleanPS];
+        if (cable) return cable;
+        
+        throw new Error(`PS-SR# "${cleanPS}" not found. Available: ${Object.keys(database).join(', ')}`);
+      }
+
+      // ============================================
+      // RENDER CABLE DATA
+      // ============================================
+      function renderCableData(cable) {
+        els.cableDashboard.classList.add('visible');
+        els.emptyState.style.display = 'none';
+        
+        els.psSrDisplay.textContent = cable.psSr;
+        els.cableSrDisplay.textContent = cable.cableSr;
+        els.descriptionDisplay.textContent = cable.description;
+        els.partNoDisplay.textContent = cable.partNo;
+        
+        els.specsGrid.innerHTML = '';
+        
+        // Description
+        const descDiv = document.createElement('div');
+        descDiv.className = 'spec-item full-width';
+        descDiv.innerHTML = `
+          <div class="spec-label">Description</div>
+          <div class="spec-value highlight">${cable.description || '—'}</div>
+        `;
+        els.specsGrid.appendChild(descDiv);
+        
+        // Part No & Length
+        const partDiv = document.createElement('div');
+        partDiv.className = 'spec-item';
+        partDiv.innerHTML = `
+          <div class="spec-label">Times Part No.</div>
+          <div class="spec-value">${cable.partNo || '—'}</div>
+        `;
+        els.specsGrid.appendChild(partDiv);
+        
+        const lenDiv = document.createElement('div');
+        lenDiv.className = 'spec-item';
+        lenDiv.innerHTML = `
+          <div class="spec-label">Length</div>
+          <div class="spec-value">${cable.length || '—'}</div>
+        `;
+        els.specsGrid.appendChild(lenDiv);
+        
+        // Connectors
+        const connDiv = document.createElement('div');
+        connDiv.className = 'spec-item full-width';
+        connDiv.innerHTML = `
+          <div class="spec-label">Connectors</div>
+          <div style="display:flex; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap;">
+            <span class="connector-badge">🔌 A: ${cable.connectorA || '—'}</span>
+            <span style="color:#6b7d90; align-self:center;">→</span>
+            <span class="connector-badge">🔌 B: ${cable.connectorB || '—'}</span>
+          </div>
+        `;
+        els.specsGrid.appendChild(connDiv);
+        
+        // Additional info
+        if (cable.frequency || cable.status || cable.location) {
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'spec-item full-width';
+          infoDiv.innerHTML = `
+            <div style="display:flex; flex-wrap:wrap; gap:1rem; font-size:0.85rem;">
+              ${cable.frequency ? `<span>📶 Freq: <strong>${cable.frequency}</strong></span>` : ''}
+              ${cable.status ? `<span>📊 Status: <strong>${cable.status}</strong></span>` : ''}
+              ${cable.location ? `<span>📍 Location: <strong>${cable.location}</strong></span>` : ''}
+            </div>
+          `;
+          els.specsGrid.appendChild(infoDiv);
+        }
+        
+        els.psSrInput.value = cable.psSr;
+        showMessage('success', `✅ ${cable.psSr} loaded from Excel`);
+      }
+
+      async function lookupCable(psSrNumber) {
+        if (!psSrNumber?.trim()) {
+          showMessage('error', 'Please enter a PS-SR# or scan a QR code');
           return;
         }
 
-        const frameSize = Math.min(250, w * 0.7, h * 0.7);
+        try {
+          els.cableDashboard.classList.add('visible');
+          els.emptyState.style.display = 'none';
+          els.specsGrid.innerHTML = '<div class="spec-item full-width" style="text-align:center;color:#6b7d90;">⏳ Searching Excel database...</div>';
+          els.psSrDisplay.textContent = 'Loading...';
+          els.cableSrDisplay.textContent = '---';
+
+          const cable = await getCableData(psSrNumber);
+          renderCableData(cable);
+        } catch (error) {
+          showMessage('error', error.message);
+          els.cableDashboard.classList.remove('visible');
+          els.emptyState.style.display = '';
+        }
+      }
+
+      // ============================================
+      // QR SCANNER
+      // ============================================
+      function updateOverlay() {
+        const readerEl = els.readerDiv;
+        if (!readerEl) return;
+        const h = readerEl.offsetHeight;
+        const w = readerEl.offsetWidth;
+        if (h === 0 || w === 0) { setTimeout(updateOverlay, 200); return; }
+        
+        const frameSize = Math.min(220, w * 0.6, h * 0.7);
         const halfFrame = frameSize / 2;
         const centerY = h / 2;
         const centerX = w / 2;
-
-        document.getElementById('overlayTop').style.height = (centerY - halfFrame) + 'px';
-        document.getElementById('overlayBottom').style.height = (centerY - halfFrame) + 'px';
-        document.getElementById('overlayLeft').style.width = (centerX - halfFrame) + 'px';
-        document.getElementById('overlayLeft').style.height = h + 'px';
-        document.getElementById('overlayRight').style.width = (centerX - halfFrame) + 'px';
-        document.getElementById('overlayRight').style.height = h + 'px';
-
-        const frame = document.getElementById('targetFrame');
-        if (frame) {
-          frame.style.width = frameSize + 'px';
-          frame.style.height = frameSize + 'px';
-        }
-      }
-
-      function fetchCableData(serialNumber) {
-        const cleanSerial = serialNumber.trim().toUpperCase();
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            const cable = cableDatabase[cleanSerial];
-            if (cable) resolve(cable);
-            else reject(new Error(`Cable "${cleanSerial}" not found`));
-          }, 200);
-        });
-      }
-
-      function renderCableData(cable) {
-        cableDashboard.classList.add('visible');
-        emptyState.style.display = 'none';
-        hideMessages();
-
-        displayCableId.textContent = cable.id;
-        statusBadge.textContent = cable.status;
-        statusBadge.className = 'status-badge';
-        if (cable.status.toLowerCase().includes('damaged') || cable.status.toLowerCase().includes('fail'))
-          statusBadge.classList.add('error');
-        else if (cable.status.toLowerCase().includes('retest') || cable.status.toLowerCase().includes('warning'))
-          statusBadge.classList.add('warning');
-
-        specsGrid.innerHTML = '';
         
-        const addSpec = (label, value, unit = '') => {
-          const div = document.createElement('div');
-          div.className = 'spec-item';
-          div.innerHTML = `<div class="spec-label">${label}</div>
-            <div class="spec-value">${value || '—'} ${unit ? `<small style="font-size:0.75rem;color:#6b7d90;">${unit}</small>` : ''}</div>`;
-          specsGrid.appendChild(div);
-        };
-
-        addSpec('Cable Type', cable.type);
-        addSpec('Length', cable.length, cable.lengthUnit);
-        addSpec('Impedance', cable.impedance, cable.impedanceUnit);
+        const ot = document.getElementById('overlayTop');
+        const ob = document.getElementById('overlayBottom');
+        const ol = document.getElementById('overlayLeft');
+        const or = document.getElementById('overlayRight');
         
-        const connDiv = document.createElement('div');
-        connDiv.className = 'spec-item';
-        connDiv.innerHTML = `<div class="spec-label">Connectors</div>
-          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.3rem;">
-            <span class="connector-badge">A: ${cable.connA}</span>
-            <span class="connector-badge">B: ${cable.connB}</span>
-          </div>`;
-        specsGrid.appendChild(connDiv);
-
-        addSpec('Max Frequency', cable.frequencyMax);
-        if (cable.vswr) addSpec('VSWR', cable.vswr);
-        if (cable.loss) addSpec('Insertion Loss', cable.loss);
-
-        lastTested.textContent = `📅 Last tested: ${cable.date}`;
-        projectInfo.textContent = `📋 Project: ${cable.project}`;
+        if (ot) ot.style.height = (centerY - halfFrame) + 'px';
+        if (ob) ob.style.height = (centerY - halfFrame) + 'px';
+        if (ol) { ol.style.width = (centerX - halfFrame) + 'px'; ol.style.height = h + 'px'; }
+        if (or) { or.style.width = (centerX - halfFrame) + 'px'; or.style.height = h + 'px'; }
       }
 
-      async function lookupCable(serialNumber) {
-        if (!serialNumber || !serialNumber.trim()) {
-          showError('Please enter a serial number or scan a QR code');
-          return;
-        }
-
-        hideMessages();
-        
-        try {
-          displayCableId.textContent = 'Loading...';
-          cableDashboard.classList.add('visible');
-          emptyState.style.display = 'none';
-          specsGrid.innerHTML = '<div class="spec-item" style="grid-column:1/-1;text-align:center;color:#6b7d90;">⏳ Searching...</div>';
-
-          const cable = await fetchCableData(serialNumber);
-          renderCableData(cable);
-          serialInput.value = cable.id;
-          showSuccess(`Cable ${cable.id} loaded successfully`);
-          
-        } catch (error) {
-          showError(error.message);
-          cableDashboard.classList.remove('visible');
-          emptyState.style.display = '';
-        }
-      }
-
-      // ============================================
-      // QR SCANNER - IMPROVED CONFIGURATION
-      // ============================================
       async function startScanner() {
-        hideMessages();
-        scanAttempts = 0;
-
-        // Check camera
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
-          });
-          stream.getTracks().forEach(track => track.stop()); // Release test stream
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+          stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          showError('Camera access denied. Please allow camera permissions.');
+          showMessage('error', 'Camera access denied. Please allow camera permissions.');
           return;
         }
 
-        scannerWrapper.classList.add('active');
+        els.scannerWrapper.classList.add('active');
         
-        // Recreate instance for fresh start
         if (html5QrCode) {
           try { await html5QrCode.stop(); } catch(e) {}
         }
         
         html5QrCode = new Html5Qrcode("reader");
 
-        const config = {
-          fps: 15, // Higher FPS for better detection
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          disableFlip: false,
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true // Better detection
-          }
-        };
-
         try {
           await html5QrCode.start(
             { facingMode: "environment" },
-            config,
-            onScanSuccess,
-            onScanFailure
+            { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+            (decodedText) => {
+              console.log('✅ QR Detected:', decodedText);
+              els.scanStatusText.textContent = '✅ Detected! Loading...';
+              els.scanStatusText.style.color = '#27ae60';
+              
+              try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = 800;
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.2);
+              } catch(e) {}
+              
+              setTimeout(() => {
+                stopScanner();
+                lookupCable(decodedText.trim());
+              }, 500);
+            },
+            () => {
+              els.scanStatusText.textContent = 'Searching for QR code...';
+              els.scanStatusText.style.color = '#f7b731';
+            }
           );
           
           isScanning = true;
-          scanToggleBtn.innerHTML = '⏹️ Stop Scanner';
-          scanToggleBtn.classList.add('btn-danger');
-          scanStatusText.textContent = 'Scanning... hold steady';
-          
+          els.scanToggleBtn.textContent = '⏹️ Stop Scanner';
+          els.scanToggleBtn.classList.add('scanning');
           setTimeout(updateOverlay, 500);
-          setTimeout(updateOverlay, 1500);
           window.addEventListener('resize', updateOverlay);
-          
-          showSuccess('Camera active - Point at QR code');
+          showMessage('info', '📷 Camera active - Point at PS-SR# QR code');
           
         } catch (err) {
           console.error('Scanner error:', err);
-          showError('Failed to start camera: ' + (err.message || 'Unknown error'));
+          showMessage('error', 'Failed to start camera: ' + err.message);
           stopScanner();
         }
       }
 
       function stopScanner() {
         if (html5QrCode && isScanning) {
-          html5QrCode.stop().then(() => {
-            console.log('Scanner stopped');
-          }).catch(err => {
-            console.log('Stop error:', err);
-          }).finally(() => {
-            cleanupScanner();
+          html5QrCode.stop().catch(() => {}).finally(() => {
+            isScanning = false;
+            els.scannerWrapper.classList.remove('active');
+            els.scanToggleBtn.textContent = '📷 Scan QR Code';
+            els.scanToggleBtn.classList.remove('scanning');
+            els.scanStatusText.textContent = '📷 Align QR code in frame';
+            els.scanStatusText.style.color = '#f7b731';
+            window.removeEventListener('resize', updateOverlay);
           });
-        } else {
-          cleanupScanner();
-        }
-      }
-
-      function cleanupScanner() {
-        isScanning = false;
-        scannerWrapper.classList.remove('active');
-        scanToggleBtn.innerHTML = '📷 Scan QR Code';
-        scanToggleBtn.classList.remove('btn-danger');
-        scanStatusText.textContent = 'Position QR code in frame';
-        window.removeEventListener('resize', updateOverlay);
-        readerDiv.innerHTML = '';
-        html5QrCode = null;
-      }
-
-      function onScanSuccess(decodedText) {
-        console.log('✅ QR DETECTED:', decodedText);
-        scanAttempts = 0;
-        
-        // Visual feedback
-        scannerOverlay.style.border = '3px solid #27ae60';
-        scanStatusText.textContent = '✅ Detected!';
-        scanStatusText.style.color = '#27ae60';
-        
-        // Beep sound
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.value = 1000;
-          gain.gain.setValueAtTime(0.3, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-          osc.start(ctx.currentTime);
-          osc.stop(ctx.currentTime + 0.2);
-        } catch(e) {}
-
-        setTimeout(() => {
-          scannerOverlay.style.border = '';
-          scanStatusText.style.color = '#f7b731';
-          stopScanner();
-          lookupCable(decodedText.trim());
-        }, 600);
-      }
-
-      function onScanFailure(error) {
-        scanAttempts++;
-        
-        // Update status based on error
-        if (error) {
-          const errStr = error.toString().toLowerCase();
-          if (errStr.includes('no qr code') || errStr.includes('no multi-format')) {
-            scanStatusText.textContent = 'Searching for QR code...';
-          } else if (errStr.includes('dark') || errStr.includes('light')) {
-            scanStatusText.textContent = 'Adjust lighting on QR code';
-          } else if (errStr.includes('blur')) {
-            scanStatusText.textContent = 'Hold camera steady';
-          } else {
-            scanStatusText.textContent = `Scanning... (${scanAttempts})`;
-          }
-        }
-        
-        // Reset after 100 attempts
-        if (scanAttempts > 100) {
-          scanAttempts = 0;
         }
       }
 
       // ============================================
       // EVENT LISTENERS
       // ============================================
-      searchBtn.addEventListener('click', () => {
-        const val = serialInput.value.trim();
-        if (val) lookupCable(val);
-        else showError('Enter a serial number');
+      els.searchBtn.addEventListener('click', () => lookupCable(els.psSrInput.value));
+      
+      els.psSrInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') lookupCable(els.psSrInput.value);
       });
 
-      serialInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          const val = serialInput.value.trim();
-          if (val) lookupCable(val);
-          else showError('Enter a serial number');
-        }
+      els.scanToggleBtn.addEventListener('click', () => {
+        isScanning ? stopScanner() : startScanner();
       });
 
-      scanToggleBtn.addEventListener('click', () => {
-        if (isScanning) {
-          stopScanner();
-        } else {
-          startScanner();
-        }
+      els.demoBtn.addEventListener('click', () => {
+        loadDatabase().then(db => {
+          const demos = Object.keys(db);
+          if (demos.length > 0) {
+            const random = demos[Math.floor(Math.random() * demos.length)];
+            els.psSrInput.value = random;
+            lookupCable(random);
+          } else {
+            showMessage('error', 'No cables found in database');
+          }
+        });
       });
 
-      demoBtn.addEventListener('click', () => {
-        const demos = Object.keys(cableDatabase);
-        const random = demos[Math.floor(Math.random() * demos.length)];
-        serialInput.value = random;
-        lookupCable(random);
-      });
-
-      window.addEventListener('beforeunload', () => {
-        if (isScanning && html5QrCode) {
-          html5QrCode.stop().catch(() => {});
-        }
-      });
-
-      // URL parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      const cableParam = urlParams.get('cable');
-      if (cableParam) {
-        serialInput.value = cableParam;
-        lookupCable(cableParam);
-      }
-
+      // ============================================
+      // INITIALIZATION
+      // ============================================
       console.log('📡 RF Cable Scanner Ready');
-      console.log('✅ Test serials:', Object.keys(cableDatabase).join(', '));
-      console.log('💡 Tips for QR scanning:');
-      console.log('   1. Ensure good lighting on the QR code');
-      console.log('   2. Hold camera steady');
-      console.log('   3. Fill the yellow frame with the QR code');
-      console.log('   4. Try different angles/distances');
+      console.log('🔗 Excel Link:', ONEDRIVE_EXCEL_LINK);
+      
+      // Pre-load Excel data on startup
+      loadDatabase().then(() => {
+        console.log('✅ Excel data pre-loaded');
+      });
+      
+      // URL parameter support
+      const urlParams = new URLSearchParams(window.location.search);
+      const psParam = urlParams.get('ps') || urlParams.get('cable');
+      if (psParam) {
+        els.psSrInput.value = psParam;
+        lookupCable(psParam);
+      }
     })();
   </script>
 </body>
