@@ -1,0 +1,439 @@
+This is a complete HTML/CSS dashboard for tracking RF cable details, designed to work as a label with a QR code. You can host it directly on GitHub Pages.
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>RF Cable Label | QR Dashboard</title>
+  <!-- QR Code library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f0f2f5;
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+      margin: 0;
+    }
+
+    /* dashboard card – mimics a cable label with QR */
+    .cable-dashboard {
+      max-width: 680px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 70, 120, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    /* header – cable ID emphasis */
+    .dashboard-header {
+      background: linear-gradient(105deg, #0a2f44 0%, #1c4b6e 100%);
+      padding: 1.8rem 2rem 1.4rem;
+      color: white;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 4px solid #f7b731;
+    }
+
+    .cable-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cable-badge {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: #c7e0f5;
+      margin-bottom: 0.3rem;
+    }
+
+    .cable-id {
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      word-break: break-word;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .qr-icon {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 0.3rem 0.7rem;
+      color: #0a2f44;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      letter-spacing: 0.4px;
+      background: #f7b731;
+      color: #0a2f44;
+    }
+
+    .qr-wrapper {
+      background: white;
+      border-radius: 1.2rem;
+      padding: 0.4rem;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #qrcode-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 0.8rem;
+      line-height: 0;
+    }
+
+    #qrcode-container canvas,
+    #qrcode-container img {
+      display: block;
+      border-radius: 0.7rem;
+      width: 80px;
+      height: 80px;
+    }
+
+    /* cable specs grid */
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.2rem;
+      padding: 1.8rem 2rem;
+      background: #f9fcff;
+    }
+
+    .spec-item {
+      background: #ffffff;
+      border-radius: 1.2rem;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 6px 14px rgba(0, 32, 64, 0.08);
+      border: 1px solid #e9f0f5;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s;
+    }
+
+    .spec-item:hover {
+      transform: translateY(-2px);
+      border-color: #b6d6f0;
+    }
+
+    .spec-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+      color: #4a6275;
+      margin-bottom: 0.3rem;
+    }
+
+    .spec-value {
+      font-size: 1.25rem;
+      font-weight: 650;
+      color: #0b2b3f;
+      word-break: break-word;
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+
+    .spec-unit {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #5e6f7e;
+      margin-left: 0.1rem;
+    }
+
+    .connector-badge {
+      background: #e5eff9;
+      color: #0a3147;
+      padding: 0.25rem 0.75rem;
+      border-radius: 2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 0.2rem;
+      width: fit-content;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .detail-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      border-top: 1px solid #dee9f2;
+      margin-top: 0.7rem;
+      padding-top: 0.7rem;
+      font-size: 0.9rem;
+      color: #1f4059;
+    }
+
+    .footer-note {
+      background: #f0f4fa;
+      padding: 1rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #d0ddea;
+      font-size: 0.8rem;
+      color: #2c4b64;
+      font-weight: 500;
+    }
+
+    .scan-me {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: white;
+      padding: 0.3rem 0.9rem;
+      border-radius: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .url-hint {
+      background: #e1ebf7;
+      border-radius: 1.5rem;
+      padding: 0.2rem 1rem;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #003153;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 0.8rem;
+      }
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .qr-wrapper {
+        align-self: flex-start;
+      }
+      .specs-grid {
+        grid-template-columns: 1fr;
+        padding: 1.2rem;
+      }
+      .cable-id {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="cable-dashboard">
+    <!-- Header with dynamic cable ID and QR code -->
+    <div class="dashboard-header">
+      <div class="cable-title-group">
+        <span class="cable-badge">RF Cable Assembly</span>
+        <div class="cable-id">
+          <span id="cableIdentifier">CBL-5G-0421</span>
+          <span class="qr-icon">📡 QR</span>
+        </div>
+      </div>
+      <div class="qr-wrapper">
+        <div id="qrcode-container"></div>
+      </div>
+    </div>
+
+    <!-- Technical specifications (editable via data attributes) -->
+    <div class="specs-grid" id="specsGrid">
+      <!-- Dynamic content rendered from JS to keep QR and data in sync -->
+    </div>
+
+    <!-- Additional meta / footer -->
+    <div class="footer-note">
+      <div class="scan-me">
+        <span>🔍</span> <span>Scan for digital record</span>
+      </div>
+      <div class="url-hint" id="dynamicUrlDisplay"></div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ----- RF CABLE DATA (customize these details for each cable) -----
+      const cableData = {
+        id: "CBL-5G-0421",
+        type: "LMR-400-UF",
+        length: "12.5",
+        lengthUnit: "ft",
+        impedance: "50",
+        impedanceUnit: "Ω",
+        connA: "N-Type (M)",
+        connB: "SMA (M)",
+        frequencyMax: "6 GHz",
+        status: "Tested • Pass",
+        date: "2026-03-15",
+        project: "Tower-A Sector 3"
+      };
+
+      // Additional calculated / display helpers
+      const displayId = cableData.id;
+      // Build a URL that points to this GitHub Pages dashboard (or current page)
+      // For GitHub Pages, you can set a custom parameter. By default we use the current URL with ?cable=ID
+      const baseUrl = window.location.origin + window.location.pathname;
+      const cableParam = `?cable=${encodeURIComponent(displayId)}`;
+      const fullCableUrl = baseUrl + cableParam;
+
+      // Update header ID
+      const idSpan = document.getElementById('cableIdentifier');
+      if (idSpan) idSpan.textContent = displayId;
+
+      // Update dynamic URL display
+      const urlDisplay = document.getElementById('dynamicUrlDisplay');
+      if (urlDisplay) {
+        // Show a shortened version for label
+        urlDisplay.textContent = window.location.hostname + "/..." + cableParam;
+      }
+
+      // Render specs grid dynamically from cableData
+      const specsGrid = document.getElementById('specsGrid');
+      if (specsGrid) {
+        specsGrid.innerHTML = ''; // clear
+
+        // Helper to create spec item
+        function addSpecItem(label, value, unit = '', extraClass = '') {
+          const div = document.createElement('div');
+          div.className = `spec-item ${extraClass}`;
+          
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'spec-label';
+          labelSpan.textContent = label;
+          
+          const valueContainer = document.createElement('span');
+          valueContainer.className = 'spec-value';
+          valueContainer.innerHTML = `${value || '—'} ${unit ? `<span class="spec-unit">${unit}</span>` : ''}`;
+          
+          div.appendChild(labelSpan);
+          div.appendChild(valueContainer);
+          return div;
+        }
+
+        // Cable type and length
+        specsGrid.appendChild(addSpecItem('Cable Type', cableData.type));
+        specsGrid.appendChild(addSpecItem('Length', cableData.length, cableData.lengthUnit));
+        
+        // Impedance
+        specsGrid.appendChild(addSpecItem('Impedance', cableData.impedance, cableData.impedanceUnit));
+        
+        // Connectors combined (nice visual)
+        const connDiv = document.createElement('div');
+        connDiv.className = 'spec-item';
+        connDiv.innerHTML = `
+          <span class="spec-label">Connectors</span>
+          <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.2rem;">
+            <span class="connector-badge">A: ${cableData.connA || '—'}</span>
+            <span class="connector-badge">B: ${cableData.connB || '—'}</span>
+          </div>
+        `;
+        specsGrid.appendChild(connDiv);
+
+        // Frequency max
+        specsGrid.appendChild(addSpecItem('Max Freq', cableData.frequencyMax));
+        
+        // Status
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'spec-item';
+        statusDiv.innerHTML = `
+          <span class="spec-label">Status</span>
+          <span class="spec-value" style="color: ${cableData.status.toLowerCase().includes('pass') ? '#0f5c3b' : '#b34a1f'}; font-weight:650;">${cableData.status || '—'}</span>
+        `;
+        specsGrid.appendChild(statusDiv);
+
+        // Full-width detail row for date & project
+        const detailDiv = document.createElement('div');
+        detailDiv.className = 'spec-item full-width';
+        detailDiv.innerHTML = `
+          <div style="display:flex; flex-wrap:wrap; justify-content: space-between; align-items: center;">
+            <span><span class="spec-label">Test Date</span> <span style="font-weight:600; margin-left:0.3rem;">${cableData.date || '—'}</span></span>
+            <span><span class="spec-label">Project</span> <span style="font-weight:600; margin-left:0.3rem;">${cableData.project || '—'}</span></span>
+          </div>
+        `;
+        specsGrid.appendChild(detailDiv);
+      }
+
+      // ----- QR CODE GENERATION (linked to the same cable URL) -----
+      const qrContainer = document.getElementById('qrcode-container');
+      if (qrContainer && window.QRCode) {
+        // Clear any previous QR
+        qrContainer.innerHTML = '';
+        
+        // Use the full URL that points to this GitHub page with cable parameter
+        const qrText = fullCableUrl;
+        
+        // Generate QR code with customized options
+        new QRCode(qrContainer, {
+          text: qrText,
+          width: 90,
+          height: 90,
+          colorDark: "#0a2f44",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // Also update the footer hint to show the full URL on hover (optional)
+        const urlHint = document.getElementById('dynamicUrlDisplay');
+        if (urlHint) {
+          urlHint.title = `Full link: ${qrText}`;
+        }
+      } else {
+        // Fallback if QR library fails to load
+        if (qrContainer) {
+          qrContainer.innerHTML = '<div style="padding:0.5rem; font-size:0.7rem; color:#555;">QR<br>🔳</div>';
+        }
+      }
+
+      // Optional: If page is loaded with ?cable=XYZ, we could highlight or verify.
+      // For now it just displays the cable data as defined.
+      const urlParams = new URLSearchParams(window.location.search);
+      const cableParamFromUrl = urlParams.get('cable');
+      if (cableParamFromUrl && cableParamFromUrl !== displayId) {
+        // In a more dynamic setup you could fetch different cable data.
+        // We'll gently indicate that the URL parameter differs from hardcoded label.
+        console.log(`URL requests cable: ${cableParamFromUrl}, showing label for: ${displayId}`);
+        // For a simple static dashboard, we keep the predefined data.
+        // You could add a small note if needed.
+      }
+
+      // Set document title to reflect cable
+      document.title = `RF Cable ${displayId} | Label Dashboard`;
+    })();
+  </script>
+</body>
+</html>
+```
