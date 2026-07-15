@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cable Reports | RF Cable Manager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0a0f14;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      min-height: 100vh;
+      color: #e0e8f0;
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: #1a1f2b;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #2a3340;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .header h1 { color: #f7b731; font-size: 1.5rem; }
+
+    .btn {
+      padding: 0.7rem 1.3rem;
+      border-radius: 2rem;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: #f7b731; color: #0a0f14; }
+    .btn-primary:hover { background: #f0a800; }
+    .btn-outline { background: transparent; border: 2px solid #f7b731; color: #f7b731; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-card {
+      background: #1a1f2b;
+      border-radius: 1rem;
+      padding: 1.2rem;
+      border: 1px solid #2a3340;
+      text-align: center;
+    }
+
+    .stat-value { font-size: 2rem; font-weight: 700; color: #f7b731; }
+    .stat-value.damaged { color: #e74c3c; }
+    .stat-label { font-size: 0.75rem; color: #6b7d90; text-transform: uppercase; margin-top: 0.3rem; }
+
+    .section {
+      background: #1a1f2b;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #2a3340;
+    }
+
+    .section-title {
+      color: #f7b731;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-input, .filter-select {
+      padding: 0.6rem 1rem;
+      background: #0f1319;
+      border: 2px solid #2a3340;
+      border-radius: 0.8rem;
+      color: #e0e8f0;
+      font-size: 0.85rem;
+      outline: none;
+      min-width: 150px;
+    }
+
+    .filter-input:focus, .filter-select:focus { border-color: #f7b731; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: #151a22;
+      color: #f7b731;
+      padding: 0.8rem;
+      text-align: left;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #2a3340;
+    }
+
+    td {
+      padding: 0.7rem 0.8rem;
+      border-bottom: 1px solid #2a3340;
+    }
+
+    tr:hover { background: rgba(247, 183, 49, 0.05); }
+
+    .badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-out { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+    .badge-in { background: rgba(39, 174, 96, 0.2); color: #27ae60; }
+    .badge-damaged { background: rgba(231, 76, 60, 0.3); color: #e74c3c; font-weight: 700; }
+    .badge-good { background: rgba(39, 174, 96, 0.2); color: #27ae60; }
+
+    .cable-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+    }
+
+    .status-out { background: #e74c3c; }
+    .status-in { background: #27ae60; }
+    .status-damaged { background: #e74c3c; animation: blink 1s infinite; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6b7d90;
+    }
+
+    .export-btn {
+      margin-left: auto;
+    }
+
+    @media (max-width: 600px) {
+      .filter-bar { flex-direction: column; }
+      table { font-size: 0.75rem; }
+      th, td { padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>📊 Cable Reports</h1>
+        <div style="color:#6b7d90; font-size:0.85rem; margin-top:0.3rem;">Complete cable history & status</div>
+      </div>
+      <div style="display:flex; gap:0.5rem;">
+        <button class="btn btn-outline" onclick="exportToCSV()">📥 Export CSV</button>
+        <a href="index.html" class="btn btn-outline">📡 Scanner</a>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="totalCables">--</div>
+        <div class="stat-label">Total Cables</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="cablesOut">--</div>
+        <div class="stat-label">Currently Checked OUT</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="cablesIn">--</div>
+        <div class="stat-label">In Store</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value damaged" id="cablesDamaged">--</div>
+        <div class="stat-label">⚠️ Damaged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalCycles">--</div>
+        <div class="stat-label">Total Mate-Demate Cycles</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="section">
+      <div class="section-title">🔍 Filter & Search</div>
+      <div class="filter-bar">
+        <input type="text" id="searchFilter" class="filter-input" placeholder="Search PS-SR# or Cable SR#..." oninput="renderTable()">
+        <select id="statusFilter" class="filter-select" onchange="renderTable()">
+          <option value="all">All Status</option>
+          <option value="out">Checked OUT</option>
+          <option value="in">In Store</option>
+          <option value="damaged">⚠️ Damaged</option>
+        </select>
+        <select id="userFilter" class="filter-select" onchange="renderTable()">
+          <option value="all">All Users</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Cable Status Table -->
+    <div class="section">
+      <div class="section-title">📋 Cable Status Overview</div>
+      <div style="overflow-x:auto;">
+        <table id="cableTable">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>PS-SR#</th>
+              <th>Cable SR#</th>
+              <th>Description</th>
+              <th>Part No.</th>
+              <th>Length</th>
+              <th>Connectors</th>
+              <th>Last Action</th>
+              <th>Last User</th>
+              <th>Total Cycles</th>
+              <th>Condition</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="11" class="empty-state">Loading data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detailed History -->
+    <div class="section">
+      <div class="section-title">📜 Full Activity Log</div>
+      <div style="overflow-x:auto;">
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Date/Time</th>
+              <th>PS-SR#</th>
+              <th>Cable SR#</th>
+              <th>User</th>
+              <th>Test Name</th>
+              <th>Action</th>
+              <th>Cycles</th>
+              <th>Damage</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="8" class="empty-state">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Load data from localStorage (same as main app)
+      const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+      
+      // Calculate cable status
+      function getCableStatuses() {
+        const statuses = {};
+        const cycles = {};
+        const damages = {};
+        
+        logs.forEach(log => {
+          statuses[log.psSr] = {
+            lastAction: log.action,
+            lastUser: log.userName,
+            lastTest: log.testName,
+            lastDate: log.timestamp,
+            cableSr: log.cableSr
+          };
+          
+          // Count cycles
+          if (!cycles[log.psSr]) cycles[log.psSr] = 0;
+          cycles[log.psSr] += (log.mateDemateCycles || 0);
+          
+          // Track damage
+          if (log.isDamaged) {
+            damages[log.psSr] = true;
+          }
+        });
+        
+        return { statuses, cycles, damages };
+      }
+
+      // Update summary stats
+      function updateStats() {
+        const { statuses, cycles, damages } = getCableStatuses();
+        
+        const cables = Object.keys(statuses);
+        const outCount = Object.values(statuses).filter(s => s.lastAction === 'out').length;
+        const inCount = cables.length - outCount;
+        const damagedCount = Object.keys(damages).length;
+        const totalCycles = Object.values(cycles).reduce((sum, c) => sum + c, 0);
+        
+        document.getElementById('totalCables').textContent = cables.length;
+        document.getElementById('cablesOut').textContent = outCount;
+        document.getElementById('cablesIn').textContent = inCount;
+        document.getElementById('cablesDamaged').textContent = damagedCount;
+        document.getElementById('totalCycles').textContent = totalCycles;
+      }
+
+      // Populate user filter
+      function populateUserFilter() {
+        const users = [...new Set(logs.map(l => l.userName).filter(Boolean))];
+        const select = document.getElementById('userFilter');
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user;
+          option.textContent = user;
+          select.appendChild(option);
+        });
+      }
+
+      // Render cable status table
+      function renderTable() {
+        const { statuses, cycles, damages } = getCableStatuses();
+        const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        const userFilter = document.getElementById('userFilter').value;
+        
+        let cables = Object.entries(statuses).map(([psSr, info]) => ({
+          psSr,
+          ...info,
+          totalCycles: cycles[psSr] || 0,
+          isDamaged: damages[psSr] || false
+        }));
+        
+        // Apply filters
+        if (searchTerm) {
+          cables = cables.filter(c => 
+            c.psSr.toLowerCase().includes(searchTerm) || 
+            (c.cableSr && c.cableSr.toLowerCase().includes(searchTerm))
+          );
+        }
+        
+        if (statusFilter === 'out') cables = cables.filter(c => c.lastAction === 'out');
+        if (statusFilter === 'in') cables = cables.filter(c => c.lastAction === 'in');
+        if (statusFilter === 'damaged') cables = cables.filter(c => c.isDamaged);
+        
+        if (userFilter !== 'all') cables = cables.filter(c => c.lastUser === userFilter);
+        
+        const tbody = document.getElementById('tableBody');
+        
+        if (cables.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No cables match the filters</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = cables.map(c => {
+          const statusDot = c.isDamaged ? 'status-damaged' : c.lastAction === 'out' ? 'status-out' : 'status-in';
+          const statusText = c.isDamaged ? '⚠️ Damaged' : c.lastAction === 'out' ? 'Checked OUT' : 'In Store';
+          
+          return `
+            <tr>
+              <td><span class="cable-status ${statusDot}"></span>${statusText}</td>
+              <td><strong style="color:#f7b731;">${c.psSr}</strong></td>
+              <td>${c.cableSr || '—'}</td>
+              <td>${c.lastTest || '—'}</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>${c.lastDate ? new Date(c.lastDate).toLocaleDateString() : '—'}</td>
+              <td>${c.lastUser || '—'}</td>
+              <td>${c.totalCycles}</td>
+              <td>${c.isDamaged ? '<span class="badge badge-damaged">DAMAGED</span>' : '<span class="badge badge-good">GOOD</span>'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Render history table
+      function renderHistory() {
+        const tbody = document.getElementById('historyBody');
+        
+        if (logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No activity logged yet</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = logs.slice().reverse().map(log => `
+          <tr>
+            <td>${new Date(log.timestamp).toLocaleString()}</td>
+            <td><strong style="color:#f7b731;">${log.psSr}</strong></td>
+            <td>${log.cableSr || '—'}</td>
+            <td>${log.userName}</td>
+            <td>${log.testName}</td>
+            <td><span class="badge ${log.action === 'out' ? 'badge-out' : 'badge-in'}">${log.action === 'out' ? '📤 CHECK OUT' : '📥 CHECK IN'}</span></td>
+            <td>${log.mateDemateCycles || 0}</td>
+            <td>${log.isDamaged ? '<span class="badge badge-damaged">⚠️ YES</span>' : '<span class="badge badge-good">✅ NO</span>'}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Export to CSV
+      window.exportToCSV = function() {
+        if (logs.length === 0) {
+          alert('No data to export');
+          return;
+        }
+        
+        const headers = ['Timestamp', 'PS-SR#', 'Cable SR#', 'User', 'Test Name', 'Action', 'Cycles', 'Damage'];
+        const rows = logs.map(log => [
+          log.timestamp,
+          log.psSr,
+          log.cableSr || '',
+          log.userName,
+          log.testName,
+          log.action === 'out' ? 'Check OUT' : 'Check IN',
+          log.mateDemateCycles || 0,
+          log.isDamaged ? 'YES' : 'NO'
+        ]);
+        
+        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cable_report_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      // Initialize
+      updateStats();
+      populateUserFilter();
+      renderTable();
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>
