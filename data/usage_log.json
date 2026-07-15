@@ -10,5 +10,17 @@
     "actionLabel": "Check OUT",
     "damageFound": "no",
     "isDamaged": false
+  },
+  {
+    "timestamp": "2026-07-15T06:38:06.576Z",
+    "psSr": "PS-RFCBL-1",
+    "cableSr": "MG200-SMSM-1.0M-1",
+    "userName": "Maharshi test",
+    "testName": "ABC",
+    "mateDemateCycles": 0,
+    "action": "in",
+    "actionLabel": "Check IN",
+    "damageFound": "no",
+    "isDamaged": false
   }
 ]
