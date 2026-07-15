@@ -47,6 +47,10 @@
       color: #f7b731;
     }
 
+    .stat-value.damaged {
+      color: #e74c3c;
+    }
+
     .stat-label {
       font-size: 0.75rem;
       color: #6b7d90;
@@ -124,8 +128,9 @@
     }
 
     .btn-primary { background: #f7b731; color: #0a0f14; }
-    .btn-primary:hover { background: #f0a800; }
+    .btn-primary:hover { background: #f0a800; transform: translateY(-1px); }
     .btn-outline { background: transparent; border: 2px solid #f7b731; color: #f7b731; }
+    .btn-outline:hover { background: rgba(247, 183, 49, 0.1); }
     .btn-scan { font-size: 1rem; padding: 0.9rem 1.8rem; background: #f7b731; color: #0a0f14; font-weight: 700; }
     .btn-scan.scanning { background: #e74c3c; color: white; }
     .btn-success { background: #27ae60; color: white; }
@@ -144,9 +149,10 @@
     }
     .scanner-wrapper.active { display: block; }
     #reader { width: 100% !important; height: 100% !important; }
+    #reader video { object-fit: cover; }
 
     .form-group { margin-bottom: 0.8rem; }
-    .form-label { display: block; font-size: 0.8rem; color: #6b7d90; margin-bottom: 0.3rem; text-transform: uppercase; }
+    .form-label { display: block; font-size: 0.8rem; color: #6b7d90; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .form-input {
       width: 100%;
       padding: 0.7rem 1rem;
@@ -158,6 +164,36 @@
       outline: none;
     }
     .form-input:focus { border-color: #f7b731; }
+
+    .radio-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      color: #e0e8f0;
+      font-size: 0.9rem;
+    }
+
+    .radio-label input[type="radio"] {
+      accent-color: #f7b731;
+      width: 18px;
+      height: 18px;
+    }
+
+    .radio-label.damage-yes input[type="radio"] {
+      accent-color: #e74c3c;
+    }
+
+    .radio-label.damage-no input[type="radio"] {
+      accent-color: #27ae60;
+    }
 
     .cable-details {
       display: grid;
@@ -188,6 +224,10 @@
       margin-top: 0.5rem;
     }
 
+    .test-report-link:hover {
+      background: rgba(52, 152, 219, 0.3);
+    }
+
     .message {
       padding: 0.8rem 1rem;
       border-radius: 0.8rem;
@@ -204,33 +244,71 @@
     .message.info { background: rgba(52, 152, 219, 0.15); border: 1px solid rgba(52, 152, 219, 0.3); color: #3498db; }
 
     .log-list { max-height: 300px; overflow-y: auto; }
-    .log-entry { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #2a3340; font-size: 0.8rem; }
+    .log-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #2a3340;
+      font-size: 0.8rem;
+    }
     .log-entry:last-child { border-bottom: none; }
-    .mate-badge { padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
-    .mate-badge.mated { background: rgba(39, 174, 96, 0.2); color: #27ae60; }
-    .mate-badge.demated { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+
+    .badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-checkout { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+    .badge-checkin { background: rgba(39, 174, 96, 0.2); color: #27ae60; }
+    .badge-damaged { background: rgba(231, 76, 60, 0.3); color: #e74c3c; font-weight: 700; }
+
+    .damage-alert {
+      color: #e74c3c;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
 
     @media (max-width: 500px) {
       .search-box { flex-direction: column; }
       .cable-details { grid-template-columns: 1fr; }
       .dashboard-stats { grid-template-columns: 1fr 1fr; }
+      .radio-group { flex-direction: column; }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
+    <!-- Header -->
     <div class="header">
       <h1>📡 RF Cable Management System</h1>
       <div class="subtitle">Scan QR Code or Search PS-SR#</div>
     </div>
 
+    <!-- Dashboard Stats -->
     <div class="dashboard-stats">
-      <div class="stat-card"><div class="stat-value" id="totalInventory">--</div><div class="stat-label">Total Inventory</div></div>
-      <div class="stat-card"><div class="stat-value" id="inUse">--</div><div class="stat-label">In Use</div></div>
-      <div class="stat-card"><div class="stat-value" id="available">--</div><div class="stat-label">Available</div></div>
-      <div class="stat-card"><div class="stat-value" id="damaged">--</div><div class="stat-label">Damaged</div></div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalInventory">--</div>
+        <div class="stat-label">Total Inventory</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="inUse">--</div>
+        <div class="stat-label">In Use (Checked OUT)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="available">--</div>
+        <div class="stat-label">Available (In Store)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value damaged" id="damaged">--</div>
+        <div class="stat-label">⚠️ Damaged</div>
+      </div>
     </div>
 
+    <!-- Search Section -->
     <div class="section">
       <div class="section-title">🔍 Search Cable</div>
       <div class="search-box">
@@ -238,52 +316,99 @@
         <button class="btn btn-primary" id="searchBtn">🔍 Lookup</button>
         <button class="btn btn-scan" id="scanToggleBtn">📷 Scan QR</button>
       </div>
-      <div class="scanner-wrapper" id="scannerWrapper"><div id="reader"></div></div>
-      
+
+      <!-- Scanner -->
+      <div class="scanner-wrapper" id="scannerWrapper">
+        <div id="reader"></div>
+      </div>
+
+      <!-- Cable Details -->
       <div id="cableDetails" style="display:none;">
         <div class="cable-details" id="cableDetailsGrid"></div>
         <a href="#" id="testReportLink" class="test-report-link" target="_blank" style="display:none;">📄 View Test Report</a>
-        <div id="mateCountDisplay" style="margin-top:0.5rem;color:#f7b731;"></div>
       </div>
 
+      <!-- User Input Form -->
       <div id="userForm" style="display:none; margin-top:1rem;">
-        <div class="section-title">📝 Log Usage</div>
+        <div class="section-title">📝 Log Cable Usage</div>
+        
         <div class="form-group">
           <label class="form-label">Your Name *</label>
           <input type="text" id="userName" class="form-input" placeholder="Enter your name">
         </div>
+        
         <div class="form-group">
           <label class="form-label">Test Name (System/Sub-System) *</label>
-          <input type="text" id="testName" class="form-input" placeholder="e.g., System-A Test">
+          <input type="text" id="testName" class="form-input" placeholder="e.g., System-A Test, Lab Test, Field Test">
         </div>
-        <div style="display:flex; gap:0.5rem;">
-          <button class="btn btn-success" id="mateBtn" style="flex:1;">🔌 Mate Connector</button>
-          <button class="btn btn-danger" id="demateBtn" style="flex:1;">🔌 De-mate Connector</button>
+        
+        <div class="form-group">
+          <label class="form-label">Cable Action *</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="cableAction" value="out" checked onchange="toggleMateDemate()">
+              📤 <strong>Check OUT</strong> (Taking OUT from Store)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="cableAction" value="in" onchange="toggleMateDemate()">
+              📥 <strong>Check IN</strong> (Returning IN to Store)
+            </label>
+          </div>
         </div>
+
+        <div class="form-group" id="mateDemateGroup" style="display:none;">
+          <label class="form-label">Approximate Mate-Demate Cycles During Testing</label>
+          <input type="number" id="mateDemateCycles" class="form-input" placeholder="e.g., 5" min="0" value="0">
+          <small style="color:#6b7d90;">Only asked when returning cable to store</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Any Damage Found? *</label>
+          <div class="radio-group">
+            <label class="radio-label damage-no">
+              <input type="radio" name="damageFound" value="no" checked>
+              ✅ <strong>No Damage</strong> - Cable is in good condition
+            </label>
+            <label class="radio-label damage-yes">
+              <input type="radio" name="damageFound" value="yes">
+              ⚠️ <strong>Yes, Damaged</strong> - Cable has damage
+            </label>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" id="submitLogBtn" style="width:100%; margin-top:0.5rem;">
+          ✅ Submit Log
+        </button>
       </div>
 
+      <!-- Messages -->
       <div class="message error" id="errorMsg"><span>⚠️</span><span id="errorText"></span></div>
       <div class="message success" id="successMsg"><span>✅</span><span id="successText"></span></div>
       <div class="message info" id="infoMsg"><span>ℹ️</span><span id="infoText"></span></div>
     </div>
 
+    <!-- Recent Activity -->
     <div class="section">
       <div class="section-title">📋 Recent Activity</div>
-      <div class="log-list" id="recentLogs"><div style="color:#6b7d90;text-align:center;">Loading...</div></div>
+      <div class="log-list" id="recentLogs">
+        <div style="color:#6b7d90;text-align:center;">Loading...</div>
+      </div>
     </div>
   </div>
 
   <script>
     (function() {
       // ============================================
-      // 🔴 CHANGE THESE TO YOUR VALUES 🔴
+      // CONFIGURATION
       // ============================================
       const GITHUB_USER = 'PiersightMaharshi';
       const GITHUB_REPO = 'RF_Cable';
       const BRANCH = 'main';
-      const CSV_PATH = 'cables.csv'; // Path to your CSV file in repo
-      // ============================================
+      const CSV_PATH = 'cables.csv';
 
+      // ============================================
+      // DOM ELEMENTS
+      // ============================================
       const els = {
         totalInventory: document.getElementById('totalInventory'),
         inUse: document.getElementById('inUse'),
@@ -297,12 +422,11 @@
         cableDetails: document.getElementById('cableDetails'),
         cableDetailsGrid: document.getElementById('cableDetailsGrid'),
         testReportLink: document.getElementById('testReportLink'),
-        mateCountDisplay: document.getElementById('mateCountDisplay'),
         userForm: document.getElementById('userForm'),
         userName: document.getElementById('userName'),
         testName: document.getElementById('testName'),
-        mateBtn: document.getElementById('mateBtn'),
-        demateBtn: document.getElementById('demateBtn'),
+        mateDemateCycles: document.getElementById('mateDemateCycles'),
+        submitLogBtn: document.getElementById('submitLogBtn'),
         errorMsg: document.getElementById('errorMsg'),
         errorText: document.getElementById('errorText'),
         successMsg: document.getElementById('successMsg'),
@@ -317,6 +441,9 @@
       let cableDatabase = {};
       let currentCable = null;
 
+      // ============================================
+      // UTILITY FUNCTIONS
+      // ============================================
       function showMessage(type, text) {
         els.errorMsg.classList.remove('show');
         els.successMsg.classList.remove('show');
@@ -324,164 +451,359 @@
         if (type === 'error') { els.errorText.textContent = text; els.errorMsg.classList.add('show'); }
         else if (type === 'success') { els.successText.textContent = text; els.successMsg.classList.add('show'); }
         else if (type === 'info') { els.infoText.textContent = text; els.infoMsg.classList.add('show'); }
-        setTimeout(() => { els.errorMsg.classList.remove('show'); els.successMsg.classList.remove('show'); els.infoMsg.classList.remove('show'); }, 4000);
+        setTimeout(() => { els.errorMsg.classList.remove('show'); els.successMsg.classList.remove('show'); els.infoMsg.classList.remove('show'); }, 5000);
       }
 
+      function toggleMateDemate() {
+        const action = document.querySelector('input[name="cableAction"]:checked')?.value;
+        const mateDemateGroup = document.getElementById('mateDemateGroup');
+        if (mateDemateGroup) {
+          mateDemateGroup.style.display = (action === 'in') ? 'block' : 'none';
+        }
+      }
+
+      // Make toggleMateDemate globally accessible for onclick
+      window.toggleMateDemate = toggleMateDemate;
+
+      // ============================================
+      // CSV LOADING
+      // ============================================
       async function loadCSV() {
         const url = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/${CSV_PATH}`;
         console.log('📥 Loading CSV from:', url);
         
-        const response = await fetch(url);
-        console.log('📡 Status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: File not found at ${url}`);
-        }
-        
-        const text = await response.text();
-        console.log('📄 Received', text.length, 'chars');
-        console.log('📄 Preview:', text.substring(0, 300));
-        
-        const lines = text.split('\n').filter(l => l.trim());
-        console.log('📋 Lines:', lines.length);
-        
-        if (lines.length < 2) {
-          throw new Error('CSV has only ' + lines.length + ' lines');
-        }
-        
-        const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
-        console.log('📋 Headers:', headers);
-        
-        cableDatabase = {};
-        
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-          if (values.length < 2) continue;
+        try {
+          const response = await fetch(url);
+          console.log('📡 Status:', response.status);
           
-          const row = {};
-          headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           
-          // Find PS-SR#
-          let psSr = '';
-          for (const key of Object.keys(row)) {
-            if (key.toLowerCase().replace(/[\s\-_#]+/g, '').includes('pssr')) {
-              psSr = row[key];
-              break;
+          const text = await response.text();
+          console.log('📄 Received', text.length, 'chars');
+          
+          const lines = text.split('\n').filter(l => l.trim());
+          console.log('📋 Lines:', lines.length);
+          
+          if (lines.length < 2) throw new Error('CSV has only ' + lines.length + ' lines');
+          
+          const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+          console.log('📋 Headers:', headers);
+          
+          cableDatabase = {};
+          
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+            if (values.length < 2) continue;
+            
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+            
+            let psSr = '';
+            for (const key of Object.keys(row)) {
+              if (key.toLowerCase().replace(/[\s\-_#]+/g, '').includes('pssr')) {
+                psSr = row[key];
+                break;
+              }
+            }
+            if (!psSr) psSr = values[0];
+            
+            if (psSr && psSr.trim()) {
+              cableDatabase[psSr.trim()] = {
+                psSr: psSr.trim(),
+                cableSr: row['Cable SR#'] || row['cablesr#'] || '',
+                description: row['Description'] || row['description'] || '',
+                partNo: row['Times Part No.'] || row['TimesPartNo.'] || '',
+                length: row['Length'] || row['length'] || '',
+                connectorA: row['Connector - A'] || row['Connector-A'] || '',
+                connectorB: row['Connector-B'] || row['connector-b'] || '',
+                testReportLink: row['Test_Report_Link'] || row['TestReportLink'] || ''
+              };
             }
           }
-          if (!psSr) psSr = values[0];
           
-          if (psSr && psSr.trim()) {
-            cableDatabase[psSr.trim()] = {
-              psSr: psSr.trim(),
-              cableSr: row['Cable SR#'] || row['cablesr#'] || '',
-              description: row['Description'] || row['description'] || '',
-              partNo: row['Times Part No.'] || row['TimesPartNo.'] || '',
-              length: row['Length'] || row['length'] || '',
-              connectorA: row['Connector - A'] || row['Connector-A'] || '',
-              connectorB: row['Connector-B'] || row['connector-b'] || '',
-              testReportLink: row['Test_Report_Link'] || row['TestReportLink'] || ''
-            };
-          }
+          console.log('✅ Loaded', Object.keys(cableDatabase).length, 'cables');
+          console.log('📊 Keys:', Object.keys(cableDatabase));
+          
+          showMessage('success', `✅ Loaded ${Object.keys(cableDatabase).length} cables from inventory`);
+          
+          // Load saved logs after CSV is loaded
+          loadLocalLogs();
+          
+        } catch (error) {
+          console.error('❌ CSV load error:', error);
+          showMessage('error', 'Cannot load cable inventory: ' + error.message);
         }
-        
-        console.log('✅ Loaded', Object.keys(cableDatabase).length, 'cables');
-        console.log('📊 Keys:', Object.keys(cableDatabase));
-        
-        // Update dashboard
-        const count = Object.keys(cableDatabase).length;
-        els.totalInventory.textContent = count;
-        els.available.textContent = count;
-        els.inUse.textContent = '0';
-        els.damaged.textContent = '0';
-        
-        showMessage('success', `✅ Loaded ${count} cables from GitHub`);
       }
 
+      // ============================================
+      // LOCAL STORAGE LOGS
+      // ============================================
+      function loadLocalLogs() {
+        const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        updateStatsFromLogs(logs);
+        displayRecentLogs(logs);
+      }
+
+      function updateStatsFromLogs(logs) {
+        const total = Object.keys(cableDatabase).length;
+        
+        // Track current status and damaged cables
+        const cableStatus = {};
+        const damagedCables = new Set();
+        
+        logs.forEach(log => {
+          cableStatus[log.psSr] = log.action;
+          if (log.isDamaged) {
+            damagedCables.add(log.psSr);
+          }
+        });
+        
+        const outCount = Object.values(cableStatus).filter(s => s === 'out').length;
+        const damagedCount = damagedCables.size;
+        
+        els.totalInventory.textContent = total || '0';
+        els.inUse.textContent = outCount;
+        els.available.textContent = Math.max(0, total - outCount - damagedCount);
+        els.damaged.textContent = damagedCount;
+      }
+
+      function displayRecentLogs(logs) {
+        const recent = logs.slice(-20).reverse();
+        
+        if (recent.length === 0) {
+          els.recentLogs.innerHTML = '<div style="color:#6b7d90;text-align:center;">No activity yet</div>';
+          return;
+        }
+        
+        els.recentLogs.innerHTML = recent.map(log => `
+          <div class="log-entry">
+            <div>
+              <strong style="color:#f7b731;">${log.psSr}</strong>
+              ${log.isDamaged ? '<span class="damage-alert"> ⚠️ DAMAGED</span>' : ''}
+              <span style="color:#6b7d90;"> by ${log.userName}</span>
+              <br>
+              <small style="color:#6b7d90;">
+                ${log.testName}
+                ${log.action === 'in' ? ` | Cycles: ${log.mateDemateCycles || 0}` : ''}
+                | ${new Date(log.timestamp).toLocaleString()}
+              </small>
+            </div>
+            <div style="display:flex; gap:0.3rem; align-items:center;">
+              ${log.isDamaged ? '<span class="badge badge-damaged">⚠️ DAMAGE</span>' : ''}
+              <span class="badge ${log.action === 'out' ? 'badge-checkout' : 'badge-checkin'}">
+                ${log.action === 'out' ? '📤 CHECK OUT' : '📥 CHECK IN'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // ============================================
+      // SUBMIT LOG
+      // ============================================
+      async function submitLog() {
+        const userName = els.userName.value.trim();
+        const testName = els.testName.value.trim();
+        const action = document.querySelector('input[name="cableAction"]:checked')?.value;
+        const damageFound = document.querySelector('input[name="damageFound"]:checked')?.value;
+        
+        // Only ask for cycles on Check IN
+        let cycles = 0;
+        if (action === 'in') {
+          cycles = parseInt(els.mateDemateCycles?.value) || 0;
+        }
+        
+        // Validation
+        if (!userName) { showMessage('error', 'Please enter your name'); els.userName.focus(); return; }
+        if (!testName) { showMessage('error', 'Please enter test name'); els.testName.focus(); return; }
+        if (!currentCable) { showMessage('error', 'Please search for a cable first'); return; }
+        
+        const logEntry = {
+          timestamp: new Date().toISOString(),
+          psSr: currentCable.psSr,
+          cableSr: currentCable.cableSr,
+          userName: userName,
+          testName: testName,
+          mateDemateCycles: cycles,
+          action: action,
+          actionLabel: action === 'out' ? 'Check OUT (Taken from Store)' : 'Check IN (Returned to Store)',
+          damageFound: damageFound,
+          isDamaged: damageFound === 'yes'
+        };
+        
+        console.log('📝 Logging:', logEntry);
+        
+        // Save to localStorage
+        let logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        logs.push(logEntry);
+        localStorage.setItem('cableLogs', JSON.stringify(logs));
+        
+        // Update UI
+        updateStatsFromLogs(logs);
+        displayRecentLogs(logs);
+        
+        // Success message
+        let msg = `✅ ${action === 'out' ? 'Check OUT' : 'Check IN'} logged for ${currentCable.psSr}`;
+        if (action === 'in') msg += ` | Cycles: ${cycles}`;
+        if (damageFound === 'yes') msg += ' | ⚠️ DAMAGE REPORTED!';
+        showMessage('success', msg);
+        
+        // Reset form
+        els.testName.value = '';
+        els.mateDemateCycles.value = '0';
+        document.querySelector('input[name="cableAction"][value="out"]').checked = true;
+        document.querySelector('input[name="damageFound"][value="no"]').checked = true;
+        toggleMateDemate();
+      }
+
+      // ============================================
+      // SEARCH & DISPLAY
+      // ============================================
       function findCable(searchTerm) {
         const term = searchTerm.trim().toUpperCase();
+        if (!term) return null;
+        
+        // Exact match
         if (cableDatabase[term]) return cableDatabase[term];
+        
+        // Case insensitive
         for (const key of Object.keys(cableDatabase)) {
           if (key.toUpperCase() === term) return cableDatabase[key];
         }
+        
+        // Partial match
         for (const key of Object.keys(cableDatabase)) {
-          if (key.toUpperCase().includes(term) || term.includes(key.toUpperCase())) return cableDatabase[key];
+          if (key.toUpperCase().includes(term) || term.includes(key.toUpperCase())) {
+            return cableDatabase[key];
+          }
         }
+        
         return null;
       }
 
-      function displayCable(cable) {
+      function displayCableDetails(cable) {
         currentCable = cable;
+        
         els.cableDetails.style.display = 'block';
         els.userForm.style.display = 'block';
         
         els.cableDetailsGrid.innerHTML = `
-          <div class="detail-item"><div class="detail-label">PS-SR#</div><div class="detail-value highlight">${cable.psSr}</div></div>
-          <div class="detail-item"><div class="detail-label">Cable SR#</div><div class="detail-value">${cable.cableSr || '—'}</div></div>
-          <div class="detail-item" style="grid-column:1/-1;"><div class="detail-label">Description</div><div class="detail-value">${cable.description || '—'}</div></div>
-          <div class="detail-item"><div class="detail-label">Part No.</div><div class="detail-value">${cable.partNo || '—'}</div></div>
-          <div class="detail-item"><div class="detail-label">Length</div><div class="detail-value">${cable.length || '—'}</div></div>
-          <div class="detail-item"><div class="detail-label">Connector A</div><div class="detail-value">${cable.connectorA || '—'}</div></div>
-          <div class="detail-item"><div class="detail-label">Connector B</div><div class="detail-value">${cable.connectorB || '—'}</div></div>
+          <div class="detail-item">
+            <div class="detail-label">PS-SR#</div>
+            <div class="detail-value highlight">${cable.psSr}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Cable SR#</div>
+            <div class="detail-value">${cable.cableSr || '—'}</div>
+          </div>
+          <div class="detail-item" style="grid-column:1/-1;">
+            <div class="detail-label">Description</div>
+            <div class="detail-value">${cable.description || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Times Part No.</div>
+            <div class="detail-value">${cable.partNo || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Length</div>
+            <div class="detail-value">${cable.length || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Connector A</div>
+            <div class="detail-value">${cable.connectorA || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Connector B</div>
+            <div class="detail-value">${cable.connectorB || '—'}</div>
+          </div>
         `;
         
+        // Test report link
         if (cable.testReportLink) {
           els.testReportLink.style.display = 'inline-block';
           els.testReportLink.href = cable.testReportLink;
         } else {
           els.testReportLink.style.display = 'none';
         }
+        
+        // Reset form
+        els.testName.value = '';
+        els.mateDemateCycles.value = '0';
+        document.querySelector('input[name="cableAction"][value="out"]').checked = true;
+        document.querySelector('input[name="damageFound"][value="no"]').checked = true;
+        toggleMateDemate();
       }
 
       async function searchCable(searchTerm) {
-        if (!searchTerm?.trim()) { showMessage('error', 'Type a PS-SR#'); return; }
-        
-        if (Object.keys(cableDatabase).length === 0) {
-          showMessage('info', 'Loading data...');
-          try {
-            await loadCSV();
-          } catch (e) {
-            showMessage('error', e.message);
-            return;
-          }
+        if (!searchTerm?.trim()) {
+          showMessage('error', 'Please type a PS-SR# (e.g., PS-RFCBL-1)');
+          return;
         }
-        
+
+        // Load CSV if not loaded
+        if (Object.keys(cableDatabase).length === 0) {
+          showMessage('info', 'Loading inventory...');
+          await loadCSV();
+          if (Object.keys(cableDatabase).length === 0) return;
+        }
+
         const cable = findCable(searchTerm);
+        
         if (cable) {
-          displayCable(cable);
-          showMessage('success', `✅ ${cable.psSr} found`);
+          displayCableDetails(cable);
+          showMessage('success', `✅ Found: ${cable.psSr} - ${cable.description || 'No description'}`);
         } else {
           els.cableDetails.style.display = 'none';
           els.userForm.style.display = 'none';
-          showMessage('error', `"${searchTerm}" not found. Try: ${Object.keys(cableDatabase).slice(0,5).join(', ')}`);
+          showMessage('error', `"${searchTerm}" not found. Available: ${Object.keys(cableDatabase).slice(0,5).join(', ')}...`);
         }
       }
 
+      // ============================================
+      // QR SCANNER
+      // ============================================
       async function startScanner() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
           stream.getTracks().forEach(t => t.stop());
-        } catch (err) { showMessage('error', 'Camera denied'); return; }
-        
+        } catch (err) {
+          showMessage('error', 'Camera access denied. Please allow camera permissions in browser settings.');
+          return;
+        }
+
         els.scannerWrapper.classList.add('active');
-        if (html5QrCode) { try { await html5QrCode.stop(); } catch(e) {} }
-        html5QrCode = new Html5Qrcode("reader");
         
+        if (html5QrCode) {
+          try { await html5QrCode.stop(); } catch(e) {}
+        }
+        
+        html5QrCode = new Html5Qrcode("reader");
+
         try {
           await html5QrCode.start(
             { facingMode: "environment" },
             { fps: 15, qrbox: { width: 250, height: 250 } },
             (decodedText) => {
+              console.log('✅ QR Scanned:', decodedText);
               stopScanner();
               els.psSrInput.value = decodedText.trim();
               searchCable(decodedText.trim());
             },
-            () => {}
+            (error) => {
+              // Scanning in progress - no QR found yet (normal)
+            }
           );
+          
           isScanning = true;
-          els.scanToggleBtn.textContent = '⏹️ Stop';
+          els.scanToggleBtn.textContent = '⏹️ Stop Scanner';
           els.scanToggleBtn.classList.add('scanning');
-        } catch (err) { showMessage('error', 'Camera error'); stopScanner(); }
+          showMessage('info', '📷 Camera active - Point at QR code');
+          
+        } catch (err) {
+          console.error('Scanner error:', err);
+          showMessage('error', 'Failed to start camera: ' + err.message);
+          stopScanner();
+        }
       }
 
       function stopScanner() {
@@ -495,26 +817,44 @@
         }
       }
 
-      // Event listeners
+      // ============================================
+      // EVENT LISTENERS
+      // ============================================
       els.searchBtn.addEventListener('click', () => searchCable(els.psSrInput.value));
-      els.psSrInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchCable(els.psSrInput.value); });
-      els.scanToggleBtn.addEventListener('click', () => { isScanning ? stopScanner() : startScanner(); });
-      els.mateBtn.addEventListener('click', () => showMessage('info', 'Mate/Demate logging coming soon'));
-      els.demateBtn.addEventListener('click', () => showMessage('info', 'Mate/Demate logging coming soon'));
-
-      // Init
-      console.log('📡 Scanner Ready');
-      console.log('🔗 CSV URL:', `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/${CSV_PATH}`);
       
-      loadCSV().catch(e => {
-        console.error('Init load error:', e);
-        showMessage('error', 'Cannot load CSV: ' + e.message);
+      els.psSrInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchCable(els.psSrInput.value);
       });
+
+      els.scanToggleBtn.addEventListener('click', () => {
+        isScanning ? stopScanner() : startScanner();
+      });
+
+      els.submitLogBtn.addEventListener('click', submitLog);
+
+      // Cleanup on page leave
+      window.addEventListener('beforeunload', () => {
+        if (isScanning && html5QrCode) {
+          html5QrCode.stop().catch(() => {});
+        }
+      });
+
+      // ============================================
+      // INITIALIZATION
+      // ============================================
+      console.log('📡 RF Cable Management System Ready');
+      console.log('📋 Config:', { GITHUB_USER, GITHUB_REPO, BRANCH, CSV_PATH });
       
-      // URL param
-      const params = new URLSearchParams(window.location.search);
-      const ps = params.get('ps') || params.get('cable');
-      if (ps) { els.psSrInput.value = ps; setTimeout(() => searchCable(ps), 2000); }
+      // Load CSV on startup
+      loadCSV();
+      
+      // Handle URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const psParam = urlParams.get('ps') || urlParams.get('cable');
+      if (psParam) {
+        els.psSrInput.value = psParam;
+        setTimeout(() => searchCable(psParam), 2000);
+      }
     })();
   </script>
 </body>
