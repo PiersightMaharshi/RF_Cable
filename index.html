@@ -181,10 +181,14 @@
       font-size: 0.9rem;
     }
 
-    .radio-label input[type="radio"] {
-      accent-color: #f7b731;
-      width: 18px;
-      height: 18px;
+    .radio-label input[type="radio"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    .radio-label:has(input:disabled) {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .radio-label.damage-yes input[type="radio"] {
@@ -599,7 +603,21 @@
           </div>
         `).join('');
       }
+      function getCurrentCableStatus(psSr) {
+        const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        // Find the latest log for this cable
+        const cableLogs = logs.filter(log => log.psSr === psSr);
+        if (cableLogs.length === 0) return 'available'; // Never used before
+        
+        const lastLog = cableLogs[cableLogs.length - 1];
+        return lastLog.action; // 'out' or 'in'
+      }
 
+      function isCableDamaged(psSr) {
+        const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        const cableLogs = logs.filter(log => log.psSr === psSr);
+        return cableLogs.some(log => log.isDamaged === true);
+      }
       // ============================================
       // SUBMIT LOG
       // ============================================
@@ -619,6 +637,40 @@
         if (!userName) { showMessage('error', 'Please enter your name'); els.userName.focus(); return; }
         if (!testName) { showMessage('error', 'Please enter test name'); els.testName.focus(); return; }
         if (!currentCable) { showMessage('error', 'Please search for a cable first'); return; }
+        
+        // ============================================
+        // CHECK CABLE STATUS - PREVENT DOUBLE CHECK-OUT
+        // ============================================
+        const currentStatus = getCurrentCableStatus(currentCable.psSr);
+        const damaged = isCableDamaged(currentCable.psSr);
+        
+        // If cable is damaged, block all actions
+        if (damaged && action === 'out') {
+          showMessage('error', '⚠️ This cable is marked as DAMAGED. It cannot be checked out until repaired and cleared.');
+          return;
+        }
+        
+        // If trying to check OUT but cable is already OUT
+        if (action === 'out' && currentStatus === 'out') {
+          showMessage('error', `❌ Cable ${currentCable.psSr} is already CHECKED OUT!\nIt must be checked IN before it can be checked OUT again.\n\nPlease ask the current user to return it first.`);
+          return;
+        }
+        
+        // If trying to check IN but cable is already IN
+        if (action === 'in' && currentStatus === 'available') {
+          showMessage('error', `❌ Cable ${currentCable.psSr} is already IN the store!\nIt was never checked OUT.`);
+          return;
+        }
+        
+        // If trying to check IN but cable is already IN (was returned)
+        if (action === 'in' && currentStatus === 'in') {
+          showMessage('error', `❌ Cable ${currentCable.psSr} is already CHECKED IN!\nIt cannot be returned twice.`);
+          return;
+        }
+        
+        // ============================================
+        // ALL CHECKS PASSED - PROCEED WITH LOGGING
+        // ============================================
         
         const logEntry = {
           timestamp: new Date().toISOString(),
@@ -656,6 +708,11 @@
         document.querySelector('input[name="cableAction"][value="out"]').checked = true;
         document.querySelector('input[name="damageFound"][value="no"]').checked = true;
         toggleMateDemate();
+        
+        // Refresh cable display to show current status
+        if (currentCable) {
+          displayCableDetails(currentCable);
+        }
       }
 
       // ============================================
@@ -688,6 +745,25 @@
         
         els.cableDetails.style.display = 'block';
         els.userForm.style.display = 'block';
+
+                // Show current cable status
+        const status = getCurrentCableStatus(cable.psSr);
+        const damaged = isCableDamaged(cable.psSr);
+        
+        let statusHTML = '';
+        if (damaged) {
+          statusHTML = '<div style="background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.3); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#e74c3c; font-weight:600;">⚠️ This cable is marked as DAMAGED</div>';
+        } else if (status === 'out') {
+          statusHTML = '<div style="background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.2); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#e74c3c; font-weight:600;">📤 Currently CHECKED OUT - Cannot be checked out again</div>';
+        } else {
+          statusHTML = '<div style="background:rgba(39,174,96,0.1); border:1px solid rgba(39,174,96,0.2); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#27ae60; font-weight:600;">📥 Available in Store - Ready for Check OUT</div>';
+        }
+        
+        // Insert status before cable details grid
+        const statusDiv = document.createElement('div');
+        statusDiv.innerHTML = statusHTML;
+        els.cableDetails.insertBefore(statusDiv.firstChild, els.cableDetailsGrid);
+
         
         els.cableDetailsGrid.innerHTML = `
           <div class="detail-item">
@@ -728,10 +804,25 @@
           els.testReportLink.style.display = 'none';
         }
         
-        // Reset form
+        // Auto-select correct action based on cable status
         els.testName.value = '';
         els.mateDemateCycles.value = '0';
-        document.querySelector('input[name="cableAction"][value="out"]').checked = true;
+        
+        if (damaged) {
+          // If damaged, default to check IN (to return it)
+          document.querySelector('input[name="cableAction"][value="in"]').checked = true;
+          // Disable check OUT
+          document.querySelector('input[name="cableAction"][value="out"]').disabled = true;
+        } else if (status === 'out') {
+          // If currently out, only allow check IN
+          document.querySelector('input[name="cableAction"][value="in"]').checked = true;
+          document.querySelector('input[name="cableAction"][value="out"]').disabled = true;
+        } else {
+          // Available - default to check OUT
+          document.querySelector('input[name="cableAction"][value="out"]').checked = true;
+          document.querySelector('input[name="cableAction"][value="out"]').disabled = false;
+        }
+        
         document.querySelector('input[name="damageFound"][value="no"]').checked = true;
         toggleMateDemate();
       }
