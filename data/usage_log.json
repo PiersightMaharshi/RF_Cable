@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "timestamp": "2026-07-15T06:15:55.063Z",
+    "psSr": "PS-RFCBL-1",
+    "cableSr": "MG200-SMSM-1.0M-1",
+    "userName": "Maharshi test 1",
+    "testName": "ABC",
+    "mateDemateCycles": 0,
+    "action": "out",
+    "actionLabel": "Check OUT",
+    "damageFound": "no",
+    "isDamaged": false
+  }
+]
