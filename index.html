@@ -544,7 +544,21 @@
       // ============================================
       // LOCAL STORAGE LOGS
       // ============================================
-      function loadLocalLogs() {
+      async function loadLocalLogs() {
+        try {
+          const response = await fetch('/api/write-log');
+          if (response.ok) {
+            const logs = await response.json();
+            localStorage.setItem('cableLogs', JSON.stringify(logs));
+            updateStatsFromLogs(logs);
+            displayRecentLogs(logs);
+            console.log('✅ Loaded', logs.length, 'logs from GitHub');
+            return;
+          }
+        } catch (e) {
+          console.log('API not available, using localStorage');
+        }
+        
         const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
         updateStatsFromLogs(logs);
         displayRecentLogs(logs);
@@ -604,7 +618,23 @@
         `).join('');
       }
       function getCurrentCableStatus(psSr) {
-        const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        async function loadLogs() {
+  try {
+    const response = await fetch('/api/write-log');
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (e) {
+    console.log('Using localStorage fallback');
+  }
+  return JSON.parse(localStorage.getItem('cableLogs') || '[]');
+}
+
+// Then wrap everything in an async function:
+(async function() {
+  const logs = await loadLogs();
+  // ... rest of the reports code
+})();
         // Find the latest log for this cable
         const cableLogs = logs.filter(log => log.psSr === psSr);
         if (cableLogs.length === 0) return 'available'; // Never used before
@@ -627,50 +657,45 @@
         const action = document.querySelector('input[name="cableAction"]:checked')?.value;
         const damageFound = document.querySelector('input[name="damageFound"]:checked')?.value;
         
-        // Only ask for cycles on Check IN
         let cycles = 0;
         if (action === 'in') {
           cycles = parseInt(els.mateDemateCycles?.value) || 0;
         }
         
-        // Validation
-        if (!userName) { showMessage('error', 'Please enter your name'); els.userName.focus(); return; }
-        if (!testName) { showMessage('error', 'Please enter test name'); els.testName.focus(); return; }
+        if (!userName) { showMessage('error', 'Please enter your name'); return; }
+        if (!testName) { showMessage('error', 'Please enter test name'); return; }
         if (!currentCable) { showMessage('error', 'Please search for a cable first'); return; }
         
-        // ============================================
-        // CHECK CABLE STATUS - PREVENT DOUBLE CHECK-OUT
-        // ============================================
-        const currentStatus = getCurrentCableStatus(currentCable.psSr);
-        const damaged = isCableDamaged(currentCable.psSr);
+        // Get current logs from API
+        let logs = [];
+        try {
+          const getRes = await fetch('/api/write-log');
+          if (getRes.ok) {
+            logs = await getRes.json();
+          }
+        } catch (e) {
+          logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        }
         
-        // If cable is damaged, block all actions
-        if (damaged && action === 'out') {
-          showMessage('error', '⚠️ This cable is marked as DAMAGED. It cannot be checked out until repaired and cleared.');
+        // Check cable status
+        const cableLogs = logs.filter(l => l.psSr === currentCable.psSr);
+        const lastAction = cableLogs.length > 0 ? cableLogs[cableLogs.length - 1].action : null;
+        const isDamaged = cableLogs.some(l => l.isDamaged);
+        
+        if (isDamaged && action === 'out') {
+          showMessage('error', '⚠️ This cable is marked as DAMAGED. Cannot check out.');
           return;
         }
         
-        // If trying to check OUT but cable is already OUT
-        if (action === 'out' && currentStatus === 'out') {
-          showMessage('error', `❌ Cable ${currentCable.psSr} is already CHECKED OUT!\nIt must be checked IN before it can be checked OUT again.\n\nPlease ask the current user to return it first.`);
+        if (action === 'out' && lastAction === 'out') {
+          showMessage('error', '❌ Cable is already CHECKED OUT! Must be returned first.');
           return;
         }
         
-        // If trying to check IN but cable is already IN
-        if (action === 'in' && currentStatus === 'available') {
-          showMessage('error', `❌ Cable ${currentCable.psSr} is already IN the store!\nIt was never checked OUT.`);
+        if (action === 'in' && lastAction !== 'out') {
+          showMessage('error', '❌ Cable is already in store!');
           return;
         }
-        
-        // If trying to check IN but cable is already IN (was returned)
-        if (action === 'in' && currentStatus === 'in') {
-          showMessage('error', `❌ Cable ${currentCable.psSr} is already CHECKED IN!\nIt cannot be returned twice.`);
-          return;
-        }
-        
-        // ============================================
-        // ALL CHECKS PASSED - PROCEED WITH LOGGING
-        // ============================================
         
         const logEntry = {
           timestamp: new Date().toISOString(),
@@ -680,41 +705,49 @@
           testName: testName,
           mateDemateCycles: cycles,
           action: action,
-          actionLabel: action === 'out' ? 'Check OUT (Taken from Store)' : 'Check IN (Returned to Store)',
+          actionLabel: action === 'out' ? 'Check OUT' : 'Check IN',
           damageFound: damageFound,
           isDamaged: damageFound === 'yes'
         };
         
-        console.log('📝 Logging:', logEntry);
+        showMessage('info', 'Saving to GitHub...');
         
-        // Save to localStorage
-        let logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
-        logs.push(logEntry);
-        localStorage.setItem('cableLogs', JSON.stringify(logs));
-        
-        // Update UI
-        updateStatsFromLogs(logs);
-        displayRecentLogs(logs);
-        
-        // Success message
-        let msg = `✅ ${action === 'out' ? 'Check OUT' : 'Check IN'} logged for ${currentCable.psSr}`;
-        if (action === 'in') msg += ` | Cycles: ${cycles}`;
-        if (damageFound === 'yes') msg += ' | ⚠️ DAMAGE REPORTED!';
-        showMessage('success', msg);
-        
-        // Reset form
-        els.testName.value = '';
-        els.mateDemateCycles.value = '0';
-        document.querySelector('input[name="cableAction"][value="out"]').checked = true;
-        document.querySelector('input[name="damageFound"][value="no"]').checked = true;
-        toggleMateDemate();
-        
-        // Refresh cable display to show current status
-        if (currentCable) {
-          displayCableDetails(currentCable);
+        try {
+          const saveRes = await fetch('/api/write-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(logEntry)
+          });
+          
+          if (saveRes.ok) {
+            const result = await saveRes.json();
+            logs.push(logEntry);
+            localStorage.setItem('cableLogs', JSON.stringify(logs));
+            
+            updateStatsFromLogs(logs);
+            displayRecentLogs(logs);
+            
+            let msg = `✅ ${action === 'out' ? 'Check OUT' : 'Check IN'} saved to GitHub (${result.total} total)`;
+            if (action === 'in') msg += ` | Cycles: ${cycles}`;
+            if (damageFound === 'yes') msg += ' | ⚠️ DAMAGE REPORTED';
+            showMessage('success', msg);
+            
+            els.testName.value = '';
+            els.mateDemateCycles.value = '0';
+            document.querySelector('input[name="cableAction"][value="out"]').checked = true;
+            document.querySelector('input[name="damageFound"][value="no"]').checked = true;
+            toggleMateDemate();
+          } else {
+            throw new Error('Save failed');
+          }
+        } catch (error) {
+          logs.push(logEntry);
+          localStorage.setItem('cableLogs', JSON.stringify(logs));
+          updateStatsFromLogs(logs);
+          displayRecentLogs(logs);
+          showMessage('error', '⚠️ Saved locally only. GitHub sync failed. Check Vercel token.');
         }
       }
-
       // ============================================
       // SEARCH & DISPLAY
       // ============================================
