@@ -617,41 +617,36 @@
           </div>
         `).join('');
       }
-      function getCurrentCableStatus(psSr) {
-        async function loadLogs() {
-  try {
-    const response = await fetch('/api/write-log');
-    if (response.ok) {
-      return await response.json();
-    }
-  } catch (e) {
-    console.log('Using localStorage fallback');
-  }
-  return JSON.parse(localStorage.getItem('cableLogs') || '[]');
-}
-
-// Then wrap everything in an async function:
-(async function() {
-  const logs = await loadLogs();
-  // ... rest of the reports code
-})();
-        // Find the latest log for this cable
-        const cableLogs = logs.filter(log => log.psSr === psSr);
-        if (cableLogs.length === 0) return 'available'; // Never used before
+      async function getCurrentCableStatus(psSr) {
+        // Get fresh data from API
+        let logs = [];
+        try {
+          const res = await fetch('/api/write-log');
+          if (res.ok) logs = await res.json();
+        } catch (e) {
+          logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        }
         
-        const lastLog = cableLogs[cableLogs.length - 1];
-        return lastLog.action; // 'out' or 'in'
+        const cableLogs = logs.filter(log => log.psSr === psSr);
+        if (cableLogs.length === 0) return 'available';
+        return cableLogs[cableLogs.length - 1].action;
       }
 
-      function isCableDamaged(psSr) {
-        const logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
-        const cableLogs = logs.filter(log => log.psSr === psSr);
-        return cableLogs.some(log => log.isDamaged === true);
+      async function isCableDamaged(psSr) {
+        let logs = [];
+        try {
+          const res = await fetch('/api/write-log');
+          if (res.ok) logs = await res.json();
+        } catch (e) {
+          logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
+        }
+        
+        return logs.filter(l => l.psSr === psSr).some(l => l.isDamaged === true);
       }
       // ============================================
       // SUBMIT LOG
       // ============================================
-      async function submitLog() {
+            async function submitLog() {
         const userName = els.userName.value.trim();
         const testName = els.testName.value.trim();
         const action = document.querySelector('input[name="cableAction"]:checked')?.value;
@@ -662,11 +657,16 @@
           cycles = parseInt(els.mateDemateCycles?.value) || 0;
         }
         
+        // Validation
         if (!userName) { showMessage('error', 'Please enter your name'); return; }
         if (!testName) { showMessage('error', 'Please enter test name'); return; }
         if (!currentCable) { showMessage('error', 'Please search for a cable first'); return; }
         
-        // Get current logs from API
+        // ============================================
+        // GET LATEST LOGS FROM API (for status check)
+        // ============================================
+        showMessage('info', 'Checking cable status...');
+        
         let logs = [];
         try {
           const getRes = await fetch('/api/write-log');
@@ -674,28 +674,52 @@
             logs = await getRes.json();
           }
         } catch (e) {
+          // Fallback to localStorage
           logs = JSON.parse(localStorage.getItem('cableLogs') || '[]');
         }
         
-        // Check cable status
+        // ============================================
+        // CHECK CABLE STATUS
+        // ============================================
         const cableLogs = logs.filter(l => l.psSr === currentCable.psSr);
-        const lastAction = cableLogs.length > 0 ? cableLogs[cableLogs.length - 1].action : null;
-        const isDamaged = cableLogs.some(l => l.isDamaged);
+        const lastLog = cableLogs.length > 0 ? cableLogs[cableLogs.length - 1] : null;
+        const lastAction = lastLog ? lastLog.action : null;
+        const isDamaged = cableLogs.some(l => l.isDamaged === true);
         
+        console.log('📊 Cable status check:', {
+          psSr: currentCable.psSr,
+          lastAction: lastAction,
+          isDamaged: isDamaged,
+          totalLogs: cableLogs.length
+        });
+        
+        // BLOCK: Cable is damaged
         if (isDamaged && action === 'out') {
-          showMessage('error', '⚠️ This cable is marked as DAMAGED. Cannot check out.');
+          showMessage('error', '⚠️ This cable is marked as DAMAGED. It cannot be checked out until repaired.');
           return;
         }
         
+        // BLOCK: Already checked OUT - can't check OUT again
         if (action === 'out' && lastAction === 'out') {
-          showMessage('error', '❌ Cable is already CHECKED OUT! Must be returned first.');
+          showMessage('error', `❌ Cable ${currentCable.psSr} is already CHECKED OUT!\n\nIt must be checked IN before it can be checked OUT again.\nLast used by: ${lastLog.userName}\nTest: ${lastLog.testName}`);
           return;
         }
         
-        if (action === 'in' && lastAction !== 'out') {
-          showMessage('error', '❌ Cable is already in store!');
+        // BLOCK: Already in store - can't check IN again
+        if (action === 'in' && (lastAction === null || lastAction === 'in')) {
+          showMessage('error', `❌ Cable ${currentCable.psSr} is already IN the store!\n\nIt was never checked OUT or has already been returned.`);
           return;
         }
+        
+        // BLOCK: Check IN but cable was never checked OUT
+        if (action === 'in' && lastAction !== 'out') {
+          showMessage('error', `❌ Cannot check IN - Cable ${currentCable.psSr} is not currently checked OUT.`);
+          return;
+        }
+        
+        // ============================================
+        // ALL CHECKS PASSED - SAVE LOG
+        // ============================================
         
         const logEntry = {
           timestamp: new Date().toISOString(),
@@ -721,31 +745,44 @@
           
           if (saveRes.ok) {
             const result = await saveRes.json();
+            
+            // Update local data
             logs.push(logEntry);
             localStorage.setItem('cableLogs', JSON.stringify(logs));
             
+            // Update UI
             updateStatsFromLogs(logs);
             displayRecentLogs(logs);
             
-            let msg = `✅ ${action === 'out' ? 'Check OUT' : 'Check IN'} saved to GitHub (${result.total} total)`;
+            // Success message
+            let msg = `✅ ${action === 'out' ? 'Check OUT' : 'Check IN'} saved!`;
             if (action === 'in') msg += ` | Cycles: ${cycles}`;
             if (damageFound === 'yes') msg += ' | ⚠️ DAMAGE REPORTED';
             showMessage('success', msg);
             
+            // Reset form
             els.testName.value = '';
             els.mateDemateCycles.value = '0';
             document.querySelector('input[name="cableAction"][value="out"]').checked = true;
             document.querySelector('input[name="damageFound"][value="no"]').checked = true;
             toggleMateDemate();
+            
+            // Refresh cable display
+            if (currentCable) {
+              setTimeout(() => displayCableDetails(currentCable), 500);
+            }
+            
           } else {
             throw new Error('Save failed');
           }
         } catch (error) {
+          console.error('Save error:', error);
+          // Save locally as fallback
           logs.push(logEntry);
           localStorage.setItem('cableLogs', JSON.stringify(logs));
           updateStatsFromLogs(logs);
           displayRecentLogs(logs);
-          showMessage('error', '⚠️ Saved locally only. GitHub sync failed. Check Vercel token.');
+          showMessage('error', '⚠️ Saved locally only. GitHub sync failed. Check Vercel GITHUB_TOKEN.');
         }
       }
       // ============================================
@@ -773,31 +810,35 @@
         return null;
       }
 
-      function displayCableDetails(cable) {
+      async function displayCableDetails(cable) {
         currentCable = cable;
         
         els.cableDetails.style.display = 'block';
         els.userForm.style.display = 'block';
-
-                // Show current cable status
-        const status = getCurrentCableStatus(cable.psSr);
-        const damaged = isCableDamaged(cable.psSr);
+        
+        // Clear previous status
+        const oldStatus = els.cableDetails.querySelector('.status-banner');
+        if (oldStatus) oldStatus.remove();
+        
+        // Get current status from API
+        const status = await getCurrentCableStatus(cable.psSr);
+        const damaged = await isCableDamaged(cable.psSr);
         
         let statusHTML = '';
         if (damaged) {
-          statusHTML = '<div style="background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.3); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#e74c3c; font-weight:600;">⚠️ This cable is marked as DAMAGED</div>';
+          statusHTML = '<div class="status-banner" style="background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.3); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#e74c3c; font-weight:600;">⚠️ DAMAGED - Cannot be checked out</div>';
         } else if (status === 'out') {
-          statusHTML = '<div style="background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.2); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#e74c3c; font-weight:600;">📤 Currently CHECKED OUT - Cannot be checked out again</div>';
+          statusHTML = '<div class="status-banner" style="background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.2); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#e74c3c; font-weight:600;">📤 Currently CHECKED OUT - Only Check IN allowed</div>';
         } else {
-          statusHTML = '<div style="background:rgba(39,174,96,0.1); border:1px solid rgba(39,174,96,0.2); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#27ae60; font-weight:600;">📥 Available in Store - Ready for Check OUT</div>';
+          statusHTML = '<div class="status-banner" style="background:rgba(39,174,96,0.1); border:1px solid rgba(39,174,96,0.2); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; color:#27ae60; font-weight:600;">📥 Available in Store - Ready for Check OUT</div>';
         }
         
-        // Insert status before cable details grid
-        const statusDiv = document.createElement('div');
-        statusDiv.innerHTML = statusHTML;
-        els.cableDetails.insertBefore(statusDiv.firstChild, els.cableDetailsGrid);
-
+        // Insert status banner
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = statusHTML;
+        els.cableDetails.insertBefore(tempDiv.firstChild, els.cableDetailsGrid);
         
+        // Rest of cable details grid...
         els.cableDetailsGrid.innerHTML = `
           <div class="detail-item">
             <div class="detail-label">PS-SR#</div>
@@ -837,21 +878,14 @@
           els.testReportLink.style.display = 'none';
         }
         
-        // Auto-select correct action based on cable status
+        // Auto-select correct radio button
         els.testName.value = '';
         els.mateDemateCycles.value = '0';
         
-        if (damaged) {
-          // If damaged, default to check IN (to return it)
-          document.querySelector('input[name="cableAction"][value="in"]').checked = true;
-          // Disable check OUT
-          document.querySelector('input[name="cableAction"][value="out"]').disabled = true;
-        } else if (status === 'out') {
-          // If currently out, only allow check IN
+        if (damaged || status === 'out') {
           document.querySelector('input[name="cableAction"][value="in"]').checked = true;
           document.querySelector('input[name="cableAction"][value="out"]').disabled = true;
         } else {
-          // Available - default to check OUT
           document.querySelector('input[name="cableAction"][value="out"]').checked = true;
           document.querySelector('input[name="cableAction"][value="out"]').disabled = false;
         }
